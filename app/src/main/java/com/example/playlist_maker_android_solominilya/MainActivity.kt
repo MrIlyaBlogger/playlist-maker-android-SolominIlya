@@ -1,11 +1,12 @@
 package com.example.playlist_maker_android_solominilya
 
+import android.content.Intent
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -51,10 +52,17 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainScreen() {
     val context = LocalContext.current
+    val darkTheme = isSystemInDarkTheme()
+    val backgroundColor = if (darkTheme) Color(0xFF141419) else Color(0xFFF2F2F2)
+    val menuBackgroundColor = if (darkTheme) Color(0xFF1B1C20) else Color.White
+    val textColor = if (darkTheme) Color(0xFFE7E7E7) else Color(0xFF2A2A2A)
+    val iconColor = if (darkTheme) Color.White else Color(0xFF2A2A2A)
+    val arrowColor = if (darkTheme) Color(0xFF8A8A8A) else Color(0xFFA0A0A0)
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF2F2F2))
+            .background(backgroundColor)
     ) {
         // Header
         Row(
@@ -78,27 +86,58 @@ fun MainScreen() {
                 .fillMaxSize()
                 .offset(y = (-20).dp)
                 .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
-                .background(Color.White)
+                .background(menuBackgroundColor)
                 .padding(top = 20.dp + 24.dp) // Padding to account for offset and spacing
         ) {
-            MenuItem(icon = Icons.Default.Search, text = "Поиск") {
-                Toast.makeText(context, "Нажата кнопка \"Поиск\"", Toast.LENGTH_SHORT).show()
+            MenuItem(
+                icon = Icons.Default.Search,
+                text = "Поиск",
+                iconColor = iconColor,
+                textColor = textColor,
+                arrowColor = arrowColor
+            ) {
+                context.startActivity(Intent(context, SearchActivity::class.java))
             }
-            MenuItem(icon = Icons.AutoMirrored.Filled.List, text = "Плейлисты") {
-                Toast.makeText(context, "Нажата кнопка \"Плейлисты\"", Toast.LENGTH_SHORT).show()
+            MenuItem(
+                icon = Icons.AutoMirrored.Filled.List,
+                text = "Плейлисты",
+                iconColor = iconColor,
+                textColor = textColor,
+                arrowColor = arrowColor
+            ) {
+                // TODO: Implement navigation to Playlists screen
             }
-            MenuItem(icon = Icons.Default.FavoriteBorder, text = "Избранное") {
-                Toast.makeText(context, "Нажата кнопка \"Избранное\"", Toast.LENGTH_SHORT).show()
+            MenuItem(
+                icon = Icons.Default.FavoriteBorder,
+                text = "Избранное",
+                iconColor = iconColor,
+                textColor = textColor,
+                arrowColor = arrowColor
+            ) {
+                // TODO: Implement navigation to Favorites screen
             }
-            MenuItem(icon = Icons.Default.Settings, text = "Настройки") {
-                Toast.makeText(context, "Нажата кнопка \"Настройки\"", Toast.LENGTH_SHORT).show()
+            MenuItem(
+                icon = Icons.Default.Settings,
+                text = "Настройки",
+                iconColor = iconColor,
+                textColor = textColor,
+                arrowColor = arrowColor
+            ) {
+                context.startActivity(Intent(context, SettingsActivity::class.java))
             }
         }
     }
 }
 
 @Composable
-fun MenuItem(icon: ImageVector, text: String, onClick: () -> Unit) {
+fun MenuItem(
+    icon: ImageVector,
+    text: String,
+    iconColor: Color,
+    textColor: Color,
+    arrowColor: Color,
+    onClick: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -110,19 +149,19 @@ fun MenuItem(icon: ImageVector, text: String, onClick: () -> Unit) {
         Icon(
             imageVector = icon,
             contentDescription = text,
-            tint = Color(0xFF2A2A2A)
+            tint = iconColor
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(
             text = text,
-            color = Color(0xFF2A2A2A),
+            color = textColor,
             fontSize = 16.sp,
             modifier = Modifier.weight(1f)
         )
         Icon(
             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
             contentDescription = "Go",
-            tint = Color(0xFFA0A0A0)
+            tint = arrowColor
         )
     }
 }
