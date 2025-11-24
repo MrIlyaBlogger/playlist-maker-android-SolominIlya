@@ -1,8 +1,11 @@
 package com.example.playlist_maker_android_solominilya
 
+import android.annotation.SuppressLint
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -35,8 +38,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import com.example.playlist_maker_android_solominilya.ui.theme.PlaylistmakerandroidSolominIlyaTheme
 
 class SettingsActivity : ComponentActivity() {
@@ -44,22 +49,28 @@ class SettingsActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             PlaylistmakerandroidSolominIlyaTheme {
-                SettingsScreen(onBackClick = { finish() }, onThemeSwitch = { recreate() })
+                SettingsScreen(onBackClick = { finish() })
             }
         }
     }
 }
 
+@SuppressLint("UseKtx")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onBackClick: () -> Unit, onThemeSwitch: () -> Unit) {
+fun SettingsScreen(onBackClick: () -> Unit) {
     val darkTheme = isSystemInDarkTheme()
-    val app = LocalContext.current.applicationContext as App
+    val context = LocalContext.current
+
+    val shareMessage = stringResource(id = R.string.share_message)
+    val supportSubject = stringResource(id = R.string.support_email_subject)
+    val supportBody = stringResource(id = R.string.support_email_body)
+    val agreementUrl = stringResource(id = R.string.user_agreement_url)
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Настройки") },
+                title = { Text(stringResource(id = R.string.settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
@@ -83,26 +94,41 @@ fun SettingsScreen(onBackClick: () -> Unit, onThemeSwitch: () -> Unit) {
                 .fillMaxSize()
         ) {
             SettingsItem(
-                title = "Тёмная тема",
+                title = stringResource(id = R.string.dark_theme),
                 icon = null,
-                isSwitchVisible = true,
-                onSwitchStateChanged = {
-                    app.switchTheme(it)
-                    onThemeSwitch()
-                }
+                isSwitchVisible = true
             )
             SettingsItem(
-                title = "Поделиться приложением",
+                title = stringResource(id = R.string.share_app),
                 icon = Icons.Default.Share
-            )
+            ) {
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, shareMessage)
+                }
+                context.startActivity(Intent.createChooser(intent, null))
+            }
             SettingsItem(
-                title = "Написать в поддержку",
+                title = stringResource(id = R.string.write_to_support),
                 icon = Icons.Outlined.Headset
-            )
+            ) {
+                val intent = Intent(Intent.ACTION_SENDTO).apply {
+                    data = "mailto:".toUri()
+                    putExtra(Intent.EXTRA_EMAIL, arrayOf("mr.ilyablogger@ya.ru"))
+                    putExtra(Intent.EXTRA_SUBJECT, supportSubject)
+                    putExtra(Intent.EXTRA_TEXT, supportBody)
+                }
+                context.startActivity(intent)
+            }
             SettingsItem(
-                title = "Пользовательское соглашение",
+                title = stringResource(id = R.string.user_agreement),
                 icon = Icons.AutoMirrored.Filled.KeyboardArrowRight
-            )
+            ) {
+                val intent = Intent(Intent.ACTION_VIEW).apply {
+                    data = agreementUrl.toUri()
+                }
+                context.startActivity(intent)
+            }
         }
     }
 }
@@ -112,7 +138,7 @@ fun SettingsItem(
     title: String,
     icon: ImageVector?,
     isSwitchVisible: Boolean = false,
-    onSwitchStateChanged: (Boolean) -> Unit = {}
+    onClick: (() -> Unit)? = null
 ) {
     val darkTheme = isSystemInDarkTheme()
     var switchState by remember { mutableStateOf(darkTheme) }
@@ -123,6 +149,7 @@ fun SettingsItem(
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp)
+            .clickable(enabled = onClick != null, onClick = { onClick?.invoke() })
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
@@ -131,10 +158,7 @@ fun SettingsItem(
         if (isSwitchVisible) {
             Switch(
                 checked = switchState,
-                onCheckedChange = {
-                    switchState = it
-                    onSwitchStateChanged(it)
-                },
+                onCheckedChange = { switchState = it }, // No-op, as requested
                 colors = SwitchDefaults.colors(
                     checkedThumbColor = Color.White,
                     checkedTrackColor = Color(0xFF3D6BE5),
@@ -156,6 +180,6 @@ fun SettingsItem(
 @Composable
 fun SettingsScreenPreview() {
     PlaylistmakerandroidSolominIlyaTheme {
-        SettingsScreen(onBackClick = {}, onThemeSwitch = {})
+        SettingsScreen(onBackClick = {})
     }
 }

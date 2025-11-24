@@ -1,3 +1,20 @@
 <resources>
     <string name="app_name">playlist-maker-android-SolominIlya</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">Настройки</string>
+    <string name="dark_theme">Тёмная тема</string>
+    <string name="share_app">Поделиться приложением</string>
+    <string name="write_to_support">Написать в поддержку</string>
+    <string name="user_agreement">Пользовательское соглашение</string>
+
+    <!-- Share App -->
+    <string name="share_message">Посмотрите, какое крутое приложение для создания плейлистов я нашёл!</string>
+
+    <!-- Write to Support -->
+    <string name="support_email_subject">Сообщение разработчикам и разработчицам приложения Playlist Maker</string>
+    <string name="support_email_body">Спасибо разработчикам и разработчицам за крутое приложение!</string>
+
+    <!-- User Agreement -->
+    <string name="user_agreement_url">https://yandex.ru/legal/practicum_offer/</string>
 </resources>
