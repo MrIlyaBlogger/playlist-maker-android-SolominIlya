@@ -1,6 +1,5 @@
 package com.example.playlist_maker_android_solominilya
 
-import android.app.Activity
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -45,7 +44,7 @@ class SettingsActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             PlaylistmakerandroidSolominIlyaTheme {
-                SettingsScreen()
+                SettingsScreen(onBackClick = { finish() }, onThemeSwitch = { recreate() })
             }
         }
     }
@@ -53,16 +52,16 @@ class SettingsActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen() {
+fun SettingsScreen(onBackClick: () -> Unit, onThemeSwitch: () -> Unit) {
     val darkTheme = isSystemInDarkTheme()
-    val activity = (LocalContext.current as? Activity)
+    val app = LocalContext.current.applicationContext as App
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Настройки") },
                 navigationIcon = {
-                    IconButton(onClick = { activity?.finish() }) {
+                    IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back"
@@ -86,7 +85,11 @@ fun SettingsScreen() {
             SettingsItem(
                 title = "Тёмная тема",
                 icon = null,
-                isSwitchVisible = true
+                isSwitchVisible = true,
+                onSwitchStateChanged = {
+                    app.switchTheme(it)
+                    onThemeSwitch()
+                }
             )
             SettingsItem(
                 title = "Поделиться приложением",
@@ -108,7 +111,8 @@ fun SettingsScreen() {
 fun SettingsItem(
     title: String,
     icon: ImageVector?,
-    isSwitchVisible: Boolean = false
+    isSwitchVisible: Boolean = false,
+    onSwitchStateChanged: (Boolean) -> Unit = {}
 ) {
     val darkTheme = isSystemInDarkTheme()
     var switchState by remember { mutableStateOf(darkTheme) }
@@ -127,7 +131,10 @@ fun SettingsItem(
         if (isSwitchVisible) {
             Switch(
                 checked = switchState,
-                onCheckedChange = { switchState = it },
+                onCheckedChange = {
+                    switchState = it
+                    onSwitchStateChanged(it)
+                },
                 colors = SwitchDefaults.colors(
                     checkedThumbColor = Color.White,
                     checkedTrackColor = Color(0xFF3D6BE5),
@@ -149,6 +156,6 @@ fun SettingsItem(
 @Composable
 fun SettingsScreenPreview() {
     PlaylistmakerandroidSolominIlyaTheme {
-        SettingsScreen()
+        SettingsScreen(onBackClick = {}, onThemeSwitch = {})
     }
 }

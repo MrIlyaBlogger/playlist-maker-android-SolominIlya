@@ -1,6 +1,5 @@
 package com.example.playlist_maker_android_solominilya
 
-import android.app.Activity
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -12,8 +11,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -21,6 +20,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -29,7 +29,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.playlist_maker_android_solominilya.ui.theme.PlaylistmakerandroidSolominIlyaTheme
@@ -39,7 +38,7 @@ class SearchActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             PlaylistmakerandroidSolominIlyaTheme {
-                SearchScreen()
+                SearchScreen(onBackClick = { finish() })
             }
         }
     }
@@ -47,32 +46,31 @@ class SearchActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchScreen() {
+fun SearchScreen(onBackClick: () -> Unit) {
     val darkTheme = isSystemInDarkTheme()
-    val activity = (LocalContext.current as? Activity)
     var searchQuery by remember { mutableStateOf("") }
 
     val backgroundColor = if (darkTheme) Color(0xFF1B1C20) else Color.White
     val textColor = if (darkTheme) Color.White else Color.Black
-    val searchFieldBackgroundColor = if (darkTheme) Color(0xFF2B2B2F) else Color(0xFFE3E3E3)
-
+    val searchFieldBackgroundColor = if (darkTheme) Color(0xFF2C2C2E) else Color(0xFFEFEFF4)
+    val placeholderColor = Color(0xFF8E8E93)
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
+            TopAppBar(
                 title = { Text("Поиск") },
                 navigationIcon = {
-                    IconButton(onClick = { activity?.finish() }) {
+                    IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = "Back",
+                            tint = textColor
                         )
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = backgroundColor,
-                    titleContentColor = textColor,
-                    navigationIconContentColor = textColor
+                    titleContentColor = textColor
                 )
             )
         },
@@ -82,14 +80,21 @@ fun SearchScreen() {
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
-                .padding(16.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
             TextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Поиск") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search Icon") },
+                placeholder = { Text("Поиск", color = placeholderColor) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search Icon", tint = placeholderColor) },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(Icons.Default.Close, contentDescription = "Clear search", tint = placeholderColor)
+                        }
+                    }
+                },
                 shape = RoundedCornerShape(8.dp),
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = searchFieldBackgroundColor,
@@ -97,18 +102,28 @@ fun SearchScreen() {
                     disabledContainerColor = searchFieldBackgroundColor,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
-                    disabledIndicatorColor = Color.Transparent
+                    disabledIndicatorColor = Color.Transparent,
+                    cursorColor = textColor,
+                    focusedTextColor = textColor,
+                    unfocusedTextColor = textColor
                 )
             )
-            // TODO: Add search results list here
         }
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, name = "Light Theme")
 @Composable
-fun SearchScreenPreview() {
-    PlaylistmakerandroidSolominIlyaTheme {
-        SearchScreen()
+fun SearchScreenPreviewLight() {
+    PlaylistmakerandroidSolominIlyaTheme(darkTheme = false) {
+        SearchScreen(onBackClick = {})
+    }
+}
+
+@Preview(showBackground = true, name = "Dark Theme")
+@Composable
+fun SearchScreenPreviewDark() {
+    PlaylistmakerandroidSolominIlyaTheme(darkTheme = true) {
+        SearchScreen(onBackClick = {})
     }
 }
