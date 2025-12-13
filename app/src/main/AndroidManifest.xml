@@ -12,7 +12,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PlaylistmakerandroidSolominIlya">
         <activity
-            android:name=".MainActivity"
+            android:name=".ui.activity.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.PlaylistmakerandroidSolominIlya">
             <intent-filter>
@@ -22,10 +22,10 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".SearchActivity"
+            android:name=".ui.activity.SearchActivity"
             android:exported="false" />
         <activity
-            android:name=".SettingsActivity"
+            android:name=".ui.activity.SettingsActivity"
             android:exported="false" />
     </application>
 
