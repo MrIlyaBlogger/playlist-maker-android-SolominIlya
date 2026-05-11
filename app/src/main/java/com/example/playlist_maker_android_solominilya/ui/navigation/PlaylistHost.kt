@@ -93,7 +93,7 @@ fun PlaylistHost(navController: NavHostController) {
     }
 }
 
-// --- Главный экран (без изменений) ---
+// --- Главный экран ---
 @Composable
 fun MainScreen(onNavigateToSearch: () -> Unit, onNavigateToSettings: () -> Unit) {
     val darkTheme = isSystemInDarkTheme()
@@ -117,7 +117,7 @@ fun MainScreen(onNavigateToSearch: () -> Unit, onNavigateToSettings: () -> Unit)
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Playlist maker",
+                text = stringResource(R.string.app_title),   // было "Playlist maker"
                 color = Color.White,
                 fontSize = 22.sp
             )
@@ -133,7 +133,7 @@ fun MainScreen(onNavigateToSearch: () -> Unit, onNavigateToSettings: () -> Unit)
         ) {
             MainMenuItem(
                 icon = Icons.Default.Search,
-                text = "Абоба",
+                text = stringResource(R.string.menu_search),       // было "Поиск"
                 iconColor = iconColor,
                 textColor = textColor,
                 arrowColor = arrowColor,
@@ -141,21 +141,21 @@ fun MainScreen(onNavigateToSearch: () -> Unit, onNavigateToSettings: () -> Unit)
             )
             MainMenuItem(
                 icon = Icons.AutoMirrored.Filled.List,
-                text = "Плейлисты",
+                text = stringResource(R.string.menu_playlists),    // было "Плейлисты"
                 iconColor = iconColor,
                 textColor = textColor,
                 arrowColor = arrowColor
             ) { /* TODO */ }
             MainMenuItem(
                 icon = Icons.Default.FavoriteBorder,
-                text = "Избранное",
+                text = stringResource(R.string.menu_favorites),    // было "Избранное"
                 iconColor = iconColor,
                 textColor = textColor,
                 arrowColor = arrowColor
             ) { /* TODO */ }
             MainMenuItem(
                 icon = Icons.Default.Settings,
-                text = "Настройки",
+                text = stringResource(R.string.menu_settings),     // было "Настройки"
                 iconColor = iconColor,
                 textColor = textColor,
                 arrowColor = arrowColor,
@@ -202,7 +202,7 @@ fun MainMenuItem(
     }
 }
 
-// --- Экран настроек (без изменений) ---
+// --- Экран настроек (без изменений по строкам, они уже были в ресурсах) ---
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(onBackClick: () -> Unit) {
@@ -323,7 +323,7 @@ fun SettingsItem(
     }
 }
 
-// --- Экран поиска (полноценный, спринт 6) ---
+// --- Экран поиска (исправлены строки и добавлен сброс состояния при очистке) ---
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
@@ -341,7 +341,7 @@ fun SearchScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Поиск") },
+                title = { Text(stringResource(R.string.search_title)) },   // "Поиск"
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
@@ -375,7 +375,7 @@ fun SearchScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Search,
-                        contentDescription = "Поиск",
+                        contentDescription = stringResource(R.string.search_placeholder),
                         tint = placeholderColor
                     )
                 }
@@ -383,10 +383,13 @@ fun SearchScreen(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
                     modifier = Modifier.weight(1f),
-                    placeholder = { Text("Поиск", color = placeholderColor) },
+                    placeholder = { Text(stringResource(R.string.search_placeholder), color = placeholderColor) },
                     trailingIcon = {
                         if (searchQuery.isNotEmpty()) {
-                            IconButton(onClick = { searchQuery = "" }) {
+                            IconButton(onClick = {
+                                searchQuery = ""
+                                viewModel.resetState()    // возвращаем состояние Initial, список исчезает
+                            }) {
                                 Icon(Icons.Default.Close, contentDescription = "Очистить", tint = placeholderColor)
                             }
                         }
@@ -411,7 +414,7 @@ fun SearchScreen(
             when (screenState) {
                 is SearchState.Initial -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Введите строку для поиска", color = textColor)
+                        Text(stringResource(R.string.search_initial_message), color = textColor)
                     }
                 }
                 is SearchState.Searching -> {
@@ -431,7 +434,7 @@ fun SearchScreen(
                 is SearchState.Fail -> {
                     val error = (screenState as SearchState.Fail).error
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Ошибка: $error", color = Color.Red)
+                        Text(stringResource(R.string.search_error_template, error), color = Color.Red)
                     }
                 }
             }
@@ -444,7 +447,7 @@ fun TrackListItem(track: Track) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { /* будет плеер */ }
+            .clickable { /* здесь будет переход на плеер */ }
             .padding(vertical = 12.dp, horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
