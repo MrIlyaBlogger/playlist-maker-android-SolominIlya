@@ -133,7 +133,7 @@ fun MainScreen(onNavigateToSearch: () -> Unit, onNavigateToSettings: () -> Unit)
         ) {
             MainMenuItem(
                 icon = Icons.Default.Search,
-                text = "Поиск",
+                text = "Абоба",
                 iconColor = iconColor,
                 textColor = textColor,
                 arrowColor = arrowColor,
