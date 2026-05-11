@@ -1,6 +1,19 @@
 <resources>
     <string name="app_name">playlist-maker-android-SolominIlya</string>
 
+    <!-- Главный экран -->
+    <string name="app_title">Playlist maker</string>
+    <string name="menu_search">Поиск</string>
+    <string name="menu_playlists">Плейлисты</string>
+    <string name="menu_favorites">Избранное</string>
+    <string name="menu_settings">Настройки</string>
+
+    <!-- Экран поиска -->
+    <string name="search_title">Поиск</string>
+    <string name="search_placeholder">Поиск</string>
+    <string name="search_initial_message">Введите строку для поиска</string>
+    <string name="search_error_template">Ошибка: %1$s</string>
+
     <!-- Settings Screen -->
     <string name="settings_title">Настройки</string>
     <string name="dark_theme">Тёмная тема</string>
