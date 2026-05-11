@@ -1,0 +1,467 @@
+package com.example.playlist_maker_android_solominilya.ui.navigation
+
+import android.content.Intent
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.outlined.Headset
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import com.example.playlist_maker_android_solominilya.R
+import com.example.playlist_maker_android_solominilya.domain.models.Track
+import com.example.playlist_maker_android_solominilya.ui.viewmodel.SearchState
+import com.example.playlist_maker_android_solominilya.ui.viewmodel.SearchViewModel
+
+@Composable
+fun PlaylistHost(navController: NavHostController) {
+    NavHost(navController = navController, startDestination = Screen.MAIN.route) {
+        composable(Screen.MAIN.route) {
+            MainScreen(
+                onNavigateToSearch = { navController.navigate(Screen.SEARCH.route) },
+                onNavigateToSettings = { navController.navigate(Screen.SETTINGS.route) }
+            )
+        }
+        composable(Screen.SEARCH.route) {
+            val searchViewModel: SearchViewModel = viewModel(factory = SearchViewModel.getViewModelFactory())
+            SearchScreen(
+                viewModel = searchViewModel,
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+        composable(Screen.SETTINGS.route) {
+            SettingsScreen(onBackClick = { navController.popBackStack() })
+        }
+    }
+}
+
+// --- Главный экран (без изменений) ---
+@Composable
+fun MainScreen(onNavigateToSearch: () -> Unit, onNavigateToSettings: () -> Unit) {
+    val darkTheme = isSystemInDarkTheme()
+    val backgroundColor = if (darkTheme) Color(0xFF141419) else Color(0xFFF2F2F2)
+    val menuBackgroundColor = if (darkTheme) Color(0xFF1B1C20) else Color.White
+    val textColor = if (darkTheme) Color(0xFFE7E7E7) else Color(0xFF2A2A2A)
+    val iconColor = if (darkTheme) Color.White else Color(0xFF2A2A2A)
+    val arrowColor = if (darkTheme) Color(0xFF8A8A8A) else Color(0xFFA0A0A0)
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(backgroundColor)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.2f)
+                .background(color = Color(0xFF3D6BE5))
+                .padding(start = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Playlist maker",
+                color = Color.White,
+                fontSize = 22.sp
+            )
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .offset(y = (-20).dp)
+                .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
+                .background(menuBackgroundColor)
+                .padding(top = 20.dp + 24.dp)
+        ) {
+            MainMenuItem(
+                icon = Icons.Default.Search,
+                text = "Поиск",
+                iconColor = iconColor,
+                textColor = textColor,
+                arrowColor = arrowColor,
+                onClick = onNavigateToSearch
+            )
+            MainMenuItem(
+                icon = Icons.AutoMirrored.Filled.List,
+                text = "Плейлисты",
+                iconColor = iconColor,
+                textColor = textColor,
+                arrowColor = arrowColor
+            ) { /* TODO */ }
+            MainMenuItem(
+                icon = Icons.Default.FavoriteBorder,
+                text = "Избранное",
+                iconColor = iconColor,
+                textColor = textColor,
+                arrowColor = arrowColor
+            ) { /* TODO */ }
+            MainMenuItem(
+                icon = Icons.Default.Settings,
+                text = "Настройки",
+                iconColor = iconColor,
+                textColor = textColor,
+                arrowColor = arrowColor,
+                onClick = onNavigateToSettings
+            )
+        }
+    }
+}
+
+@Composable
+fun MainMenuItem(
+    icon: ImageVector,
+    text: String,
+    iconColor: Color,
+    textColor: Color,
+    arrowColor: Color,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = text,
+            tint = iconColor
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = text,
+            color = textColor,
+            fontSize = 16.sp,
+            modifier = Modifier.weight(1f)
+        )
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = "Go",
+            tint = arrowColor
+        )
+    }
+}
+
+// --- Экран настроек (без изменений) ---
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SettingsScreen(onBackClick: () -> Unit) {
+    val darkTheme = isSystemInDarkTheme()
+    val context = LocalContext.current
+
+    val shareMessage = stringResource(id = R.string.share_message)
+    val supportSubject = stringResource(id = R.string.support_email_subject)
+    val supportBody = stringResource(id = R.string.support_email_body)
+    val agreementUrl = stringResource(id = R.string.user_agreement_url)
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(id = R.string.settings_title)) },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = if (darkTheme) Color(0xFF1B1C20) else Color.White,
+                    titleContentColor = if (darkTheme) Color.White else Color.Black,
+                    navigationIconContentColor = if (darkTheme) Color.White else Color.Black
+                )
+            )
+        },
+        containerColor = if (darkTheme) Color(0xFF1B1C20) else Color.White
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize()
+        ) {
+            SettingsItem(
+                title = stringResource(id = R.string.dark_theme),
+                icon = null,
+                isSwitchVisible = true
+            )
+            SettingsItem(
+                title = stringResource(id = R.string.share_app),
+                icon = Icons.Default.Share
+            ) {
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, shareMessage)
+                }
+                context.startActivity(Intent.createChooser(intent, null))
+            }
+            SettingsItem(
+                title = stringResource(id = R.string.write_to_support),
+                icon = Icons.Outlined.Headset
+            ) {
+                val intent = Intent(Intent.ACTION_SENDTO).apply {
+                    data = "mailto:".toUri()
+                    putExtra(Intent.EXTRA_EMAIL, arrayOf("mr.ilyablogger@ya.ru"))
+                    putExtra(Intent.EXTRA_SUBJECT, supportSubject)
+                    putExtra(Intent.EXTRA_TEXT, supportBody)
+                }
+                context.startActivity(intent)
+            }
+            SettingsItem(
+                title = stringResource(id = R.string.user_agreement),
+                icon = Icons.AutoMirrored.Filled.KeyboardArrowRight
+            ) {
+                val intent = Intent(Intent.ACTION_VIEW).apply {
+                    data = agreementUrl.toUri()
+                }
+                context.startActivity(intent)
+            }
+        }
+    }
+}
+
+@Composable
+fun SettingsItem(
+    title: String,
+    icon: ImageVector?,
+    isSwitchVisible: Boolean = false,
+    onClick: (() -> Unit)? = null
+) {
+    val darkTheme = isSystemInDarkTheme()
+    var switchState by remember { mutableStateOf(darkTheme) }
+    val textColor = if (darkTheme) Color(0xFFE7E7E7) else Color(0xFF1E1E1E)
+    val iconColor = if (darkTheme) Color(0xFF8A8A8A) else Color(0xFF707070)
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .clickable(enabled = onClick != null, onClick = { onClick?.invoke() })
+            .padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(text = title, color = textColor)
+        if (isSwitchVisible) {
+            Switch(
+                checked = switchState,
+                onCheckedChange = { switchState = it },
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = Color.White,
+                    checkedTrackColor = Color(0xFF3D6BE5),
+                    uncheckedThumbColor = if (darkTheme) Color(0xFF717171) else Color(0xFFC0C0C0),
+                    uncheckedTrackColor = if (darkTheme) Color(0xFF2B2B2F) else Color(0xFFE3E3E3)
+                )
+            )
+        } else if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = title,
+                tint = iconColor
+            )
+        }
+    }
+}
+
+// --- Экран поиска (полноценный, спринт 6) ---
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SearchScreen(
+    viewModel: SearchViewModel,
+    onBackClick: () -> Unit
+) {
+    val screenState by viewModel.searchScreenState.collectAsState()
+    var searchQuery by remember { mutableStateOf("") }
+    val darkTheme = isSystemInDarkTheme()
+    val backgroundColor = if (darkTheme) Color(0xFF1B1C20) else Color.White
+    val textColor = if (darkTheme) Color.White else Color.Black
+    val searchFieldBackgroundColor = if (darkTheme) Color(0xFF2C2C2E) else Color(0xFFEFEFF4)
+    val placeholderColor = Color(0xFF8E8E93)
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Поиск") },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = textColor
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = backgroundColor,
+                    titleContentColor = textColor
+                )
+            )
+        },
+        containerColor = backgroundColor
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                IconButton(
+                    onClick = { viewModel.search(searchQuery) },
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Поиск",
+                        tint = placeholderColor
+                    )
+                }
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    modifier = Modifier.weight(1f),
+                    placeholder = { Text("Поиск", color = placeholderColor) },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Default.Close, contentDescription = "Очистить", tint = placeholderColor)
+                            }
+                        }
+                    },
+                    shape = RoundedCornerShape(8.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = searchFieldBackgroundColor,
+                        unfocusedContainerColor = searchFieldBackgroundColor,
+                        disabledContainerColor = searchFieldBackgroundColor,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        disabledIndicatorColor = Color.Transparent,
+                        cursorColor = textColor,
+                        focusedTextColor = textColor,
+                        unfocusedTextColor = textColor
+                    )
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            when (screenState) {
+                is SearchState.Initial -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("Введите строку для поиска", color = textColor)
+                    }
+                }
+                is SearchState.Searching -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                }
+                is SearchState.Success -> {
+                    val tracks = (screenState as SearchState.Success).foundList
+                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                        items(tracks) { track ->
+                            TrackListItem(track)
+                            HorizontalDivider(thickness = 0.5.dp, color = if (darkTheme) Color.Gray else Color.LightGray)
+                        }
+                    }
+                }
+                is SearchState.Fail -> {
+                    val error = (screenState as SearchState.Fail).error
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("Ошибка: $error", color = Color.Red)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TrackListItem(track: Track) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { /* будет плеер */ }
+            .padding(vertical = 12.dp, horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Image(
+            painter = painterResource(id = R.drawable.ic_music),
+            contentDescription = "Обложка трека",
+            modifier = Modifier.size(45.dp)
+        )
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 16.dp)
+        ) {
+            Text(track.trackName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Text(track.artistName, fontSize = 14.sp, color = Color.Gray)
+        }
+        Text(track.trackTime, fontSize = 14.sp, color = Color.Gray)
+    }
+}
