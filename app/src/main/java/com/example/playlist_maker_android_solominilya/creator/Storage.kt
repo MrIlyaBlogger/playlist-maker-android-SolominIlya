@@ -4,56 +4,16 @@ import com.example.playlist_maker_android_solominilya.data.dto.TrackDto
 
 class Storage {
     private val listTracks = listOf(
-        TrackDto(
-            trackName = "Владивосток 2000",
-            artistName = "Мумий Троль",
-            trackTimeMillis = 158000, // 2:38
-        ),
-        TrackDto(
-            trackName = "Группа крови",
-            artistName = "Кино",
-            trackTimeMillis = 283000, // 4:43
-        ),
-        TrackDto(
-            trackName = "Не смотри назад",
-            artistName = "Ария",
-            trackTimeMillis = 312000, // 5:12
-        ),
-        TrackDto(
-            trackName = "Звезда по имени Солнце",
-            artistName = "Кино",
-            trackTimeMillis = 225000,
-        ),
-        TrackDto(
-            trackName = "Лондон",
-            artistName = "Аквариум",
-            trackTimeMillis = 272000,
-        ),
-        TrackDto(
-            trackName = "На заре",
-            artistName = "Альянс",
-            trackTimeMillis = 230000,
-        ),
-        TrackDto(
-            trackName = "Перемен",
-            artistName = "Кино",
-            trackTimeMillis = 296000,
-        ),
-        TrackDto(
-            trackName = "Розовый фламинго",
-            artistName = "Сплин",
-            trackTimeMillis = 195000,
-        ),
-        TrackDto(
-            trackName = "Танцевать",
-            artistName = "Мельница",
-            trackTimeMillis = 222000,
-        ),
-        TrackDto(
-            trackName = "Чёрный бумер",
-            artistName = "Серега",
-            trackTimeMillis = 241000,
-        ),
+        TrackDto(1, "Владивосток 2000", "Мумий Троль", 158000, "", false, 0),
+        TrackDto(2, "Группа крови", "Кино", 283000, "", false, 0),
+        TrackDto(3, "Не смотри назад", "Ария", 312000, "", false, 0),
+        TrackDto(4, "Звезда по имени Солнце", "Кино", 225000, "", false, 0),
+        TrackDto(5, "Лондон", "Аквариум", 272000, "", false, 0),
+        TrackDto(6, "На заре", "Альянс", 230000, "", false, 0),
+        TrackDto(7, "Перемен", "Кино", 296000, "", false, 0),
+        TrackDto(8, "Розовый фламинго", "Сплин", 195000, "", false, 0),
+        TrackDto(9, "Танцевать", "Мельница", 222000, "", false, 0),
+        TrackDto(10, "Чёрный бумер", "Серега", 241000, "", false, 0)
     )
 
     fun search(request: String): List<TrackDto> {
@@ -63,4 +23,3 @@ class Storage {
         }
     }
 }
-

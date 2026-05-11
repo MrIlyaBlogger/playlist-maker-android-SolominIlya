@@ -14,6 +14,9 @@
     <string name="search_initial_message">Введите строку для поиска</string>
     <string name="search_error_template">Ошибка: %1$s</string>
 
+    <string name="no_songs_found">Ничего не найдено</string>
+    <string name="history_title">История поиска</string>
+
     <!-- Settings Screen -->
     <string name="settings_title">Настройки</string>
     <string name="dark_theme">Тёмная тема</string>

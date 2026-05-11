@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -30,6 +31,7 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.outlined.Headset
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -45,6 +47,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,9 +56,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -68,6 +73,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.playlist_maker_android_solominilya.R
 import com.example.playlist_maker_android_solominilya.domain.models.Track
+import com.example.playlist_maker_android_solominilya.domain.models.Word
 import com.example.playlist_maker_android_solominilya.ui.viewmodel.SearchState
 import com.example.playlist_maker_android_solominilya.ui.viewmodel.SearchViewModel
 
@@ -323,7 +329,6 @@ fun SettingsItem(
     }
 }
 
-// --- Экран поиска (исправлены строки и добавлен сброс состояния при очистке) ---
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
@@ -331,7 +336,24 @@ fun SearchScreen(
     onBackClick: () -> Unit
 ) {
     val screenState by viewModel.searchScreenState.collectAsState()
-    var searchQuery by remember { mutableStateOf("") }
+    var text by remember { mutableStateOf("") }
+    var isFocused by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+
+    val historyList by viewModel.historyState.collectAsState()
+
+    // Передаём текст в ViewModel при каждом изменении (debounce внутри)
+    LaunchedEffect(text) {
+        viewModel.updateQuery(text)
+    }
+
+    // Снимаем фокус при успешном поиске
+    LaunchedEffect(screenState) {
+        if (screenState is SearchState.Success) {
+            focusManager.clearFocus()
+        }
+    }
+
     val darkTheme = isSystemInDarkTheme()
     val backgroundColor = if (darkTheme) Color(0xFF1B1C20) else Color.White
     val textColor = if (darkTheme) Color.White else Color.Black
@@ -341,7 +363,7 @@ fun SearchScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.search_title)) },   // "Поиск"
+                title = { Text(stringResource(R.string.search_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
@@ -365,56 +387,69 @@ fun SearchScreen(
                 .fillMaxSize()
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                IconButton(
-                    onClick = { viewModel.search(searchQuery) },
-                    modifier = Modifier.size(48.dp)
-                ) {
+            OutlinedTextField(
+                value = text,
+                onValueChange = { newText -> text = newText },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onFocusChanged { focusState -> isFocused = focusState.isFocused },
+                placeholder = { Text(stringResource(R.string.search_placeholder), color = placeholderColor) },
+                leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.Search,
-                        contentDescription = stringResource(R.string.search_placeholder),
+                        contentDescription = "Поиск",
                         tint = placeholderColor
                     )
-                }
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    modifier = Modifier.weight(1f),
-                    placeholder = { Text(stringResource(R.string.search_placeholder), color = placeholderColor) },
-                    trailingIcon = {
-                        if (searchQuery.isNotEmpty()) {
-                            IconButton(onClick = {
-                                searchQuery = ""
-                                viewModel.resetState()    // возвращаем состояние Initial, список исчезает
-                            }) {
-                                Icon(Icons.Default.Close, contentDescription = "Очистить", tint = placeholderColor)
-                            }
+                },
+                trailingIcon = {
+                    if (text.isNotEmpty()) {
+                        IconButton(onClick = {
+                            text = ""
+                            viewModel.clearSearch()
+                        }) {
+                            Icon(Icons.Default.Close, contentDescription = "Очистить", tint = placeholderColor)
                         }
-                    },
-                    shape = RoundedCornerShape(8.dp),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = searchFieldBackgroundColor,
-                        unfocusedContainerColor = searchFieldBackgroundColor,
-                        disabledContainerColor = searchFieldBackgroundColor,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent,
-                        cursorColor = textColor,
-                        focusedTextColor = textColor,
-                        unfocusedTextColor = textColor
-                    )
+                    }
+                },
+                shape = RoundedCornerShape(8.dp),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = searchFieldBackgroundColor,
+                    unfocusedContainerColor = searchFieldBackgroundColor,
+                    disabledContainerColor = searchFieldBackgroundColor,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    disabledIndicatorColor = Color.Transparent,
+                    cursorColor = textColor,
+                    focusedTextColor = textColor,
+                    unfocusedTextColor = textColor
+                )
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // История поиска
+            if (isFocused && text.isEmpty() && historyList.isNotEmpty()) {
+                HistoryRequests(
+                    historyList = historyList,
+                    onClick = { word ->
+                        text = word
+                        viewModel.updateQuery(word)
+                    }
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
+            // Состояния
             when (screenState) {
                 is SearchState.Initial -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(stringResource(R.string.search_initial_message), color = textColor)
+                    if (text.isEmpty()) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text(stringResource(R.string.search_initial_message), color = textColor)
+                        }
+                    } else {
+                        // Поиск активирован, но ждём debounce
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
                     }
                 }
                 is SearchState.Searching -> {
@@ -424,10 +459,19 @@ fun SearchScreen(
                 }
                 is SearchState.Success -> {
                     val tracks = (screenState as SearchState.Success).foundList
-                    LazyColumn(modifier = Modifier.fillMaxSize()) {
-                        items(tracks) { track ->
-                            TrackListItem(track)
-                            HorizontalDivider(thickness = 0.5.dp, color = if (darkTheme) Color.Gray else Color.LightGray)
+                    if (tracks.isEmpty()) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text(stringResource(R.string.no_songs_found), color = textColor)
+                        }
+                    } else {
+                        LazyColumn(modifier = Modifier.fillMaxSize()) {
+                            items(tracks) { track ->
+                                TrackListItem(
+                                    track = track,
+                                    onClick = { /* обработка клика, пока не используется */ }
+                                )
+                                HorizontalDivider(thickness = 0.5.dp, color = if (darkTheme) Color.Gray else Color.LightGray)
+                            }
                         }
                     }
                 }
@@ -443,11 +487,46 @@ fun SearchScreen(
 }
 
 @Composable
-fun TrackListItem(track: Track) {
+fun HistoryRequests(
+    historyList: List<Word>,
+    onClick: (String) -> Unit
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(max = 200.dp)
+            .background(Color.Transparent)
+    ) {
+        items(historyList) { word ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onClick(word.word) }
+                    .padding(vertical = 12.dp, horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.History,
+                    contentDescription = null,
+                    tint = Color.Gray
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = word.word, color = Color.Gray)
+            }
+            HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray)
+        }
+    }
+}
+
+@Composable
+fun TrackListItem(
+    track: Track,
+    onClick: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { /* здесь будет переход на плеер */ }
+            .clickable { onClick() }
             .padding(vertical = 12.dp, horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
