@@ -17,7 +17,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.playlist_maker_android_solominilya.R
-import com.example.playlist_maker_android_solominilya.domain.models.Playlist
 import com.example.playlist_maker_android_solominilya.ui.viewmodel.PlaylistsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)

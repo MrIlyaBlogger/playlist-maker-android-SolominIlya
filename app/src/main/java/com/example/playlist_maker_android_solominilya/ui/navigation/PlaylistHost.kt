@@ -5,14 +5,12 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import com.example.playlist_maker_android_solominilya.domain.models.Word
-import androidx.compose.material.icons.filled.History
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,6 +22,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -31,10 +32,12 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.Headset
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -49,6 +52,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -76,10 +80,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.playlist_maker_android_solominilya.R
 import com.example.playlist_maker_android_solominilya.domain.models.Track
+import com.example.playlist_maker_android_solominilya.domain.models.Word
 import com.example.playlist_maker_android_solominilya.ui.screen.FavoritesScreen
 import com.example.playlist_maker_android_solominilya.ui.screen.NewPlaylistScreen
+import com.example.playlist_maker_android_solominilya.ui.screen.PlaylistScreen
 import com.example.playlist_maker_android_solominilya.ui.screen.PlaylistsScreen
 import com.example.playlist_maker_android_solominilya.ui.screen.TrackDetailsScreen
+import com.example.playlist_maker_android_solominilya.ui.viewmodel.PlaylistViewModel
 import com.example.playlist_maker_android_solominilya.ui.viewmodel.PlaylistsViewModel
 import com.example.playlist_maker_android_solominilya.ui.viewmodel.SearchState
 import com.example.playlist_maker_android_solominilya.ui.viewmodel.SearchViewModel
@@ -102,41 +109,54 @@ fun PlaylistHost(navController: NavHostController) {
                 viewModel = searchViewModel,
                 onBackClick = { navController.popBackStack() },
                 onTrackClick = { track ->
-                    navController.navigate("track_details/${track.id}")
+                    navController.navigate("track_details/${track.trackId}")
                 }
             )
         }
         composable(Screen.SETTINGS.route) {
             SettingsScreen(onBackClick = { navController.popBackStack() })
         }
+
+        composable(Screen.FAVORITES.route) {
+            FavoritesScreen(onBackClick = { navController.popBackStack() })
+        }
+
         composable(Screen.PLAYLISTS.route) {
             val playlistsViewModel: PlaylistsViewModel = viewModel()
             PlaylistsScreen(
                 viewModel = playlistsViewModel,
                 onAddPlaylist = { navController.navigate(Screen.NEW_PLAYLIST.route) },
                 onBackClick = { navController.popBackStack() },
-                onPlaylistClick = { /* пока не используется */ }
+                onPlaylistClick = { playlistId -> navController.navigate("playlist_details/$playlistId") }
             )
-        }
-        composable(Screen.FAVORITES.route) {
-            FavoritesScreen(onBackClick = { navController.popBackStack() })
         }
         composable(Screen.NEW_PLAYLIST.route) {
             val playlistsViewModel: PlaylistsViewModel = viewModel()
             NewPlaylistScreen(
-                onSave = { name, description ->
-                    playlistsViewModel.createNewPlaylist(name, description)
-                },
+                onSave = { name, description -> playlistsViewModel.createNewPlaylist(name, description) },
                 onBackClick = { navController.popBackStack() }
             )
         }
+        composable(
+            route = Screen.PLAYLIST_DETAILS.route,
+            arguments = listOf(navArgument("playlistId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val playlistId = backStackEntry.arguments?.getLong("playlistId") ?: return@composable
+            val playlistViewModel: PlaylistViewModel = viewModel(factory = PlaylistViewModel.factory(playlistId))
+            PlaylistScreen(
+                playlistViewModel = playlistViewModel,
+                onBackClick = { navController.popBackStack() },
+                onTrackClick = { track -> navController.navigate("track_details/${track.trackId}") }
+            )
+        }
+
         composable(
             route = Screen.TRACK_DETAILS.route,
             arguments = listOf(navArgument("trackId") { type = NavType.LongType })
         ) { backStackEntry ->
             val trackId = backStackEntry.arguments?.getLong("trackId") ?: return@composable
             val trackDetailsViewModel: TrackDetailsViewModel = viewModel()
-            val playlistsViewModel: PlaylistsViewModel = viewModel()
+            val playlistsViewModel: PlaylistsViewModel = viewModel()   // <-- просто viewModel(), без factory
             TrackDetailsScreen(
                 trackId = trackId,
                 trackDetailsViewModel = trackDetailsViewModel,
@@ -144,11 +164,25 @@ fun PlaylistHost(navController: NavHostController) {
                 onBackClick = { navController.popBackStack() }
             )
         }
+
+        composable(
+            route = Screen.PLAYLIST_DETAILS.route,
+            arguments = listOf(navArgument("playlistId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val playlistId = backStackEntry.arguments?.getLong("playlistId") ?: return@composable
+            val playlistViewModel: PlaylistViewModel = viewModel(factory = PlaylistViewModel.factory(playlistId))
+            PlaylistScreen(
+                playlistViewModel = playlistViewModel,
+                onBackClick = { navController.popBackStack() },
+                onTrackClick = { track ->
+                    navController.navigate("track_details/${track.trackId}")
+                }
+            )
+        }
     }
 }
 
 // --- Главный экран ---
-// MainScreen с onNavigateToPlaylists и onNavigateToFavorites
 @Composable
 fun MainScreen(
     onNavigateToSearch: () -> Unit,
@@ -212,33 +246,19 @@ fun MainMenuItem(
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = text,
-            tint = iconColor
-        )
+        Icon(imageVector = icon, contentDescription = text, tint = iconColor)
         Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = text,
-            color = textColor,
-            fontSize = 16.sp,
-            modifier = Modifier.weight(1f)
-        )
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-            contentDescription = "Go",
-            tint = arrowColor
-        )
+        Text(text = text, color = textColor, fontSize = 16.sp, modifier = Modifier.weight(1f))
+        Icon(imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Go", tint = arrowColor)
     }
 }
 
-// --- Экран настроек (без изменений по строкам, они уже были в ресурсах) ---
+// --- Экран настроек (без изменений) ---
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(onBackClick: () -> Unit) {
     val darkTheme = isSystemInDarkTheme()
     val context = LocalContext.current
-
     val shareMessage = stringResource(id = R.string.share_message)
     val supportSubject = stringResource(id = R.string.support_email_subject)
     val supportBody = stringResource(id = R.string.support_email_body)
@@ -250,10 +270,7 @@ fun SettingsScreen(onBackClick: () -> Unit) {
                 title = { Text(stringResource(id = R.string.settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
-                        )
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -265,45 +282,21 @@ fun SettingsScreen(onBackClick: () -> Unit) {
         },
         containerColor = if (darkTheme) Color(0xFF1B1C20) else Color.White
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
-        ) {
-            SettingsItem(
-                title = stringResource(id = R.string.dark_theme),
-                icon = null,
-                isSwitchVisible = true
-            )
-            SettingsItem(
-                title = stringResource(id = R.string.share_app),
-                icon = Icons.Default.Share
-            ) {
-                val intent = Intent(Intent.ACTION_SEND).apply {
-                    type = "text/plain"
-                    putExtra(Intent.EXTRA_TEXT, shareMessage)
-                }
+        Column(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
+            SettingsItem(title = stringResource(id = R.string.dark_theme), icon = null, isSwitchVisible = true)
+            SettingsItem(title = stringResource(id = R.string.share_app), icon = Icons.Default.Share) {
+                val intent = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, shareMessage) }
                 context.startActivity(Intent.createChooser(intent, null))
             }
-            SettingsItem(
-                title = stringResource(id = R.string.write_to_support),
-                icon = Icons.Outlined.Headset
-            ) {
+            SettingsItem(title = stringResource(id = R.string.write_to_support), icon = Icons.Outlined.Headset) {
                 val intent = Intent(Intent.ACTION_SENDTO).apply {
-                    data = "mailto:".toUri()
-                    putExtra(Intent.EXTRA_EMAIL, arrayOf("mr.ilyablogger@ya.ru"))
-                    putExtra(Intent.EXTRA_SUBJECT, supportSubject)
-                    putExtra(Intent.EXTRA_TEXT, supportBody)
+                    data = "mailto:".toUri(); putExtra(Intent.EXTRA_EMAIL, arrayOf("mr.ilyablogger@ya.ru"))
+                    putExtra(Intent.EXTRA_SUBJECT, supportSubject); putExtra(Intent.EXTRA_TEXT, supportBody)
                 }
                 context.startActivity(intent)
             }
-            SettingsItem(
-                title = stringResource(id = R.string.user_agreement),
-                icon = Icons.AutoMirrored.Filled.KeyboardArrowRight
-            ) {
-                val intent = Intent(Intent.ACTION_VIEW).apply {
-                    data = agreementUrl.toUri()
-                }
+            SettingsItem(title = stringResource(id = R.string.user_agreement), icon = Icons.AutoMirrored.Filled.KeyboardArrowRight) {
+                val intent = Intent(Intent.ACTION_VIEW).apply { data = agreementUrl.toUri() }
                 context.startActivity(intent)
             }
         }
@@ -344,15 +337,12 @@ fun SettingsItem(
                 )
             )
         } else if (icon != null) {
-            Icon(
-                imageVector = icon,
-                contentDescription = title,
-                tint = iconColor
-            )
+            Icon(imageVector = icon, contentDescription = title, tint = iconColor)
         }
     }
 }
 
+// --- Экран поиска ---
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
@@ -365,11 +355,9 @@ fun SearchScreen(
     var isFocused by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
     val historyList by viewModel.historyState.collectAsState()
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     LaunchedEffect(text) { viewModel.updateQuery(text) }
-    LaunchedEffect(screenState) {
-        if (screenState is SearchState.Success) focusManager.clearFocus()
-    }
 
     val darkTheme = isSystemInDarkTheme()
     val backgroundColor = if (darkTheme) Color(0xFF1B1C20) else Color.White
@@ -396,7 +384,11 @@ fun SearchScreen(
                 leadingIcon = { Icon(Icons.Default.Search, "Поиск", tint = placeholderColor) },
                 trailingIcon = {
                     if (text.isNotEmpty()) {
-                        IconButton(onClick = { text = ""; viewModel.clearSearch() }) {
+                        IconButton(onClick = {
+                            text = ""
+                            viewModel.clearSearch()
+                            keyboardController?.hide()  // скрываем клавиатуру
+                        }) {
                             Icon(Icons.Default.Close, "Очистить", tint = placeholderColor)
                         }
                     }
@@ -414,10 +406,12 @@ fun SearchScreen(
                     unfocusedTextColor = textColor
                 )
             )
+
             Spacer(modifier = Modifier.height(8.dp))
             if (isFocused && text.isEmpty() && historyList.isNotEmpty()) {
                 HistoryRequests(historyList = historyList, onClick = { word -> text = word; viewModel.updateQuery(word) })
             }
+
             when (screenState) {
                 is SearchState.Initial -> {
                     if (text.isEmpty()) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text(stringResource(R.string.search_initial_message), color = textColor) }
@@ -426,17 +420,23 @@ fun SearchScreen(
                 is SearchState.Searching -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
                 is SearchState.Success -> {
                     val tracks = (screenState as SearchState.Success).foundList
-                    if (tracks.isEmpty()) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text(stringResource(R.string.no_songs_found), color = textColor) }
-                    else LazyColumn(Modifier.fillMaxSize()) {
-                        items(tracks) { track ->
-                            TrackListItem(track = track, onClick = { onTrackClick(track) })
-                            HorizontalDivider(thickness = 0.5.dp, color = if (darkTheme) Color.Gray else Color.LightGray)
+                    if (tracks.isEmpty()) {
+                        EmptyPlaceholder()
+                    } else {
+                        LazyColumn(Modifier.fillMaxSize()) {
+                            items(tracks) { track ->
+                                TrackListItem(track = track, onClick = { onTrackClick(track) })
+                                HorizontalDivider(thickness = 0.5.dp, color = if (darkTheme) Color.Gray else Color.LightGray)
+                            }
                         }
                     }
                 }
                 is SearchState.Fail -> {
-                    val error = (screenState as SearchState.Fail).error
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text(stringResource(R.string.search_error_template, error), color = Color.Red) }
+                    val fail = screenState as SearchState.Fail
+                    ErrorPlaceholder(
+                        message = fail.error,
+                        onRetry = { viewModel.search(fail.retryQuery) }
+                    )
                 }
             }
         }
@@ -461,11 +461,7 @@ fun HistoryRequests(
                     .padding(vertical = 12.dp, horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Filled.History,
-                    contentDescription = null,
-                    tint = Color.Gray
-                )
+                Icon(imageVector = Icons.Filled.History, contentDescription = null, tint = Color.Gray)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(text = word.word, color = Color.Gray)
             }
@@ -477,15 +473,72 @@ fun HistoryRequests(
 @Composable
 fun TrackListItem(track: Track, onClick: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().clickable { onClick() }.padding(vertical = 12.dp, horizontal = 16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(vertical = 12.dp, horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Image(painter = painterResource(id = R.drawable.ic_music), contentDescription = "Обложка", modifier = Modifier.size(45.dp))
+        AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(track.artworkUrl100)
+                .crossfade(true)
+                .build(),
+            contentDescription = track.trackName,
+            modifier = Modifier
+                .size(45.dp)
+                .clip(RoundedCornerShape(4.dp)),
+            contentScale = ContentScale.Crop,
+            placeholder = painterResource(id = R.drawable.ic_music),
+            error = painterResource(id = R.drawable.ic_music)
+        )
         Column(modifier = Modifier.weight(1f).padding(start = 16.dp)) {
             Text(track.trackName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
             Text(track.artistName, fontSize = 14.sp, color = Color.Gray)
         }
-        Text(track.trackTime, fontSize = 14.sp, color = Color.Gray)
+        Text(track.formattedTime, fontSize = 14.sp, color = Color.Gray)
+    }
+}
+
+@Composable
+fun EmptyPlaceholder() {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            painter = painterResource(id = R.drawable.ic_empty),
+            contentDescription = null,
+            modifier = Modifier.size(64.dp),
+            tint = Color.Gray
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text("Ничего не найдено", color = Color.Gray)
+    }
+}
+
+@Composable
+fun ErrorPlaceholder(message: String, onRetry: (() -> Unit)?) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            painter = painterResource(id = R.drawable.ic_error),
+            contentDescription = null,
+            modifier = Modifier.size(64.dp),
+            tint = Color.Gray
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(message, color = Color.Gray)
+        if (onRetry != null) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(onClick = onRetry) {
+                Text("Обновить")
+            }
+        }
     }
 }

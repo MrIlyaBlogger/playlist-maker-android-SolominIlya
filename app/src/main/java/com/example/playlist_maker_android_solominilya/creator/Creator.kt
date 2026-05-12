@@ -14,14 +14,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 
 object Creator {
-    private val storage by lazy { Storage() }
-    private val networkClient by lazy { RetrofitNetworkClient(storage) }
-
-    // Единая база данных для всего приложения
+    // Единая база данных для плейлистов и избранного
     private val databaseMock = DatabaseMock(CoroutineScope(Dispatchers.IO))
 
-    // Поисковый репозиторий (работает с Storage, не с DatabaseMock – оставляем как было)
-    val tracksRepository: TracksRepository by lazy { TracksRepositoryImpl(networkClient) }
+    // Поисковый репозиторий – использует сетевой клиент
+    val tracksRepository: TracksRepository by lazy {
+        TracksRepositoryImpl(RetrofitNetworkClient())
+    }
 
     fun provideSearchHistoryRepository(scope: CoroutineScope): SearchHistoryRepository {
         return SearchHistoryRepositoryImpl(scope)

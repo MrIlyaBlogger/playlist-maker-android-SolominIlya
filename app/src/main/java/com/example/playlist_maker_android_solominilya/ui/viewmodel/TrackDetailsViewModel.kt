@@ -26,7 +26,7 @@ class TrackDetailsViewModel : ViewModel() {
     fun toggleFavorite(track: Track, isFavorite: Boolean) {
         viewModelScope.launch(Dispatchers.IO) {
             tracksRepo.updateTrackFavoriteStatus(track, isFavorite)
-            _track.value = _track.value?.copy(favorite = isFavorite)
+            _track.value = _track.value?.copy(isFavorite = isFavorite)
         }
     }
 

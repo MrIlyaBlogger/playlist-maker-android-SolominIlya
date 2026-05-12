@@ -1,11 +1,11 @@
 package com.example.playlist_maker_android_solominilya.data.dto
 
+import com.google.gson.annotations.SerializedName
+
 data class TrackDto(
-    val id: Long,
-    val trackName: String,
-    val artistName: String,
-    val trackTimeMillis: Long,
-    val image: String = "",
-    val favorite: Boolean = false,
-    val playlistId: Long = 0
+    @SerializedName("trackId") val trackId: Long = 0,
+    val trackName: String? = null,
+    val artistName: String? = null,
+    val trackTimeMillis: Long? = null,
+    @SerializedName("artworkUrl100") val artworkUrl100: String? = null
 )

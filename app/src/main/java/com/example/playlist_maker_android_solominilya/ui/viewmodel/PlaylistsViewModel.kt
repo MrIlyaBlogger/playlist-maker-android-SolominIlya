@@ -18,7 +18,6 @@ class PlaylistsViewModel : ViewModel() {
         }
     }
 
-    // Теперь это suspend-функция, чтобы можно было дождаться сохранения
     suspend fun createNewPlaylist(name: String, description: String) {
         playlistsRepository.addNewPlaylist(name, description)
     }

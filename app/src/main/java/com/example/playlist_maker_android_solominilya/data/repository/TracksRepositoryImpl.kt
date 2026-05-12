@@ -5,30 +5,25 @@ import com.example.playlist_maker_android_solominilya.data.dto.TracksSearchRespo
 import com.example.playlist_maker_android_solominilya.domain.api.NetworkClient
 import com.example.playlist_maker_android_solominilya.domain.api.TracksRepository
 import com.example.playlist_maker_android_solominilya.domain.models.Track
-import kotlinx.coroutines.delay
 
-class TracksRepositoryImpl(private val networkClient: NetworkClient) : TracksRepository {
+class TracksRepositoryImpl(
+    private val networkClient: NetworkClient
+) : TracksRepository {
 
     override suspend fun searchTracks(expression: String): List<Track> {
         val response = networkClient.doRequest(TracksSearchRequest(expression))
-        delay(1000) // эмулируем задержку
-        return if (response.resultCode == 200) {
-            (response as TracksSearchResponse).results.map {
-                val seconds = it.trackTimeMillis / 1000
-                val minutes = seconds / 60
-                val trackTime = "%02d:%02d".format(minutes, seconds % 60)
+        if (response.resultCode == 200 && response is TracksSearchResponse) {
+            return response.results.map { dto ->
                 Track(
-                    id = it.id,
-                    trackName = it.trackName,
-                    artistName = it.artistName,
-                    trackTime = trackTime,
-                    image = it.image,
-                    favorite = it.favorite,
-                    playlistId = it.playlistId
+                    trackId = dto.trackId,
+                    trackName = dto.trackName ?: "Неизвестно",
+                    artistName = dto.artistName ?: "Неизвестный исполнитель",
+                    trackTimeMillis = dto.trackTimeMillis ?: 0L,
+                    artworkUrl100 = dto.artworkUrl100
                 )
             }
         } else {
-            emptyList()
+            throw Exception(response.errorMessage ?: "Ошибка сети")
         }
     }
 }

@@ -29,7 +29,7 @@ class TracksManagementRepositoryImpl(
     }
 
     override suspend fun updateTrackFavoriteStatus(track: Track, isFavorite: Boolean) {
-        database.insertTrack(track.copy(favorite = isFavorite))
+        database.insertTrack(track.copy(isFavorite = isFavorite))
     }
 
     override suspend fun deleteTracksByPlaylistId(playlistId: Long) {

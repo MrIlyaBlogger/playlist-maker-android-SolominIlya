@@ -1,15 +1,43 @@
 package com.example.playlist_maker_android_solominilya.data.network
 
-import com.example.playlist_maker_android_solominilya.creator.Storage
 import com.example.playlist_maker_android_solominilya.data.dto.TracksSearchRequest
-import com.example.playlist_maker_android_solominilya.data.dto.TracksSearchResponse
 import com.example.playlist_maker_android_solominilya.domain.api.NetworkClient
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import java.io.IOException
 
-class RetrofitNetworkClient(private val storage: Storage) : NetworkClient {
+class RetrofitNetworkClient : NetworkClient {
 
-    override fun doRequest(request: Any): BaseResponse {
-        val searchList = storage.search((request as TracksSearchRequest).expression)
-        return TracksSearchResponse(searchList).apply { resultCode = 200 }
+    private val api: ITunesApiService by lazy {
+        Retrofit.Builder()
+            .baseUrl("https://itunes.apple.com/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(ITunesApiService::class.java)
+    }
+
+    override suspend fun doRequest(dto: Any): BaseResponse {
+        return try {
+            when (dto) {
+                is TracksSearchRequest -> {
+                    val response = api.searchTracks(query = dto.expression)
+                    response.apply { resultCode = 200 }
+                }
+                else -> BaseResponse().apply {
+                    resultCode = 400
+                    errorMessage = "Invalid request type"
+                }
+            }
+        } catch (e: IOException) {
+            BaseResponse().apply {
+                resultCode = -1
+                errorMessage = "Network error: ${e.message ?: "Unknown IO error"}"
+            }
+        } catch (e: Exception) {
+            BaseResponse().apply {
+                resultCode = -2
+                errorMessage = "Unexpected error: ${e.message ?: "Unknown error"}"
+            }
+        }
     }
 }
-

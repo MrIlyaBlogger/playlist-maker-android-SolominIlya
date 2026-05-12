@@ -13,11 +13,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.playlist_maker_android_solominilya.R
+import com.example.playlist_maker_android_solominilya.domain.models.Playlist   // <-- важно!
 import com.example.playlist_maker_android_solominilya.ui.viewmodel.PlaylistsViewModel
 import com.example.playlist_maker_android_solominilya.ui.viewmodel.TrackDetailsViewModel
 
@@ -26,7 +30,7 @@ import com.example.playlist_maker_android_solominilya.ui.viewmodel.TrackDetailsV
 fun TrackDetailsScreen(
     trackId: Long,
     trackDetailsViewModel: TrackDetailsViewModel,
-    playlistsViewModel: PlaylistsViewModel,
+    playlistsViewModel: PlaylistsViewModel,   // <-- правильный тип
     onBackClick: () -> Unit
 ) {
     LaunchedEffect(trackId) {
@@ -56,7 +60,7 @@ fun TrackDetailsScreen(
                                 },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text(playlist.name)
+                                Text(playlist.name)  // теперь работает, потому что импортирован Playlist
                             }
                         }
                     }
@@ -85,26 +89,32 @@ fun TrackDetailsScreen(
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_music),
-                    contentDescription = null,
-                    modifier = Modifier.size(120.dp),
-                    tint = Color.Gray
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(track.artworkUrl100)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = track.trackName,
+                    modifier = Modifier.size(200.dp),
+                    placeholder = painterResource(id = R.drawable.ic_music),
+                    error = painterResource(id = R.drawable.ic_music)
                 )
+
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(track.trackName, fontSize = 22.sp, fontWeight = FontWeight.Bold)
                 Text(track.artistName, fontSize = 18.sp, color = Color.Gray)
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(track.trackTime, fontSize = 16.sp)
+                Text(track.formattedTime, fontSize = 16.sp)
                 Spacer(modifier = Modifier.height(24.dp))
+
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     IconButton(onClick = {
-                        trackDetailsViewModel.toggleFavorite(track, !track.favorite)
+                        trackDetailsViewModel.toggleFavorite(track, !track.isFavorite)
                     }) {
                         Icon(
-                            imageVector = if (track.favorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                            imageVector = if (track.isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                             contentDescription = "Избранное",
-                            tint = if (track.favorite) Color.Red else Color.Gray
+                            tint = if (track.isFavorite) Color.Red else Color.Gray
                         )
                     }
                     IconButton(onClick = { showBottomSheet = true }) {
