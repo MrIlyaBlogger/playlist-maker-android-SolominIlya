@@ -8,6 +8,10 @@
     <string name="menu_favorites">Избранное</string>
     <string name="menu_settings">Настройки</string>
 
+    <string name="playlists_title">Плейлисты</string>
+    <string name="new_playlist_title">Новый плейлист</string>
+    <string name="track_details_title">Детали трека</string>
+
     <!-- Экран поиска -->
     <string name="search_title">Поиск</string>
     <string name="search_placeholder">Поиск</string>

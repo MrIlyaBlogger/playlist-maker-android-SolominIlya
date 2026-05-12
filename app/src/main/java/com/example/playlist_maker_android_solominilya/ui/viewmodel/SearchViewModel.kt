@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.playlist_maker_android_solominilya.creator.Creator
 import com.example.playlist_maker_android_solominilya.domain.api.SearchHistoryRepository
+import com.example.playlist_maker_android_solominilya.domain.api.TracksManagementRepository
 import com.example.playlist_maker_android_solominilya.domain.api.TracksRepository
 import com.example.playlist_maker_android_solominilya.domain.models.Word
 import kotlinx.coroutines.Dispatchers
@@ -23,6 +24,10 @@ class SearchViewModel(
 
     private val searchHistoryRepository: SearchHistoryRepository =
         Creator.provideSearchHistoryRepository(viewModelScope)
+
+    // Общий репозиторий для сохранения треков в избранное/плейлисты
+    private val tracksManagementRepo: TracksManagementRepository =
+        Creator.provideTracksManagementRepository(viewModelScope)
 
     private val _searchQuery = MutableStateFlow("")
     private val _searchScreenState = MutableStateFlow<SearchState>(SearchState.Initial)
@@ -53,10 +58,11 @@ class SearchViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 _searchScreenState.update { SearchState.Searching }
-                // Сохраняем запрос в историю
                 searchHistoryRepository.addToHistory(Word(word = request))
                 refreshHistory()
                 val list = tracksRepository.searchTracks(request)
+                // Копируем найденные треки в общее хранилище
+                list.forEach { tracksManagementRepo.insertTrack(it) }
                 _searchScreenState.update { SearchState.Success(foundList = list) }
             } catch (e: IOException) {
                 _searchScreenState.update { SearchState.Fail(e.message.toString()) }

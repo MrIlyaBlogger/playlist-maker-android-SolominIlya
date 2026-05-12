@@ -5,11 +5,14 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import com.example.playlist_maker_android_solominilya.domain.models.Word
+import androidx.compose.material.icons.filled.History
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -31,7 +34,6 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.outlined.Headset
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -47,7 +49,6 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -69,13 +70,20 @@ import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.example.playlist_maker_android_solominilya.R
 import com.example.playlist_maker_android_solominilya.domain.models.Track
-import com.example.playlist_maker_android_solominilya.domain.models.Word
+import com.example.playlist_maker_android_solominilya.ui.screen.FavoritesScreen
+import com.example.playlist_maker_android_solominilya.ui.screen.NewPlaylistScreen
+import com.example.playlist_maker_android_solominilya.ui.screen.PlaylistsScreen
+import com.example.playlist_maker_android_solominilya.ui.screen.TrackDetailsScreen
+import com.example.playlist_maker_android_solominilya.ui.viewmodel.PlaylistsViewModel
 import com.example.playlist_maker_android_solominilya.ui.viewmodel.SearchState
 import com.example.playlist_maker_android_solominilya.ui.viewmodel.SearchViewModel
+import com.example.playlist_maker_android_solominilya.ui.viewmodel.TrackDetailsViewModel
 
 @Composable
 fun PlaylistHost(navController: NavHostController) {
@@ -83,25 +91,71 @@ fun PlaylistHost(navController: NavHostController) {
         composable(Screen.MAIN.route) {
             MainScreen(
                 onNavigateToSearch = { navController.navigate(Screen.SEARCH.route) },
-                onNavigateToSettings = { navController.navigate(Screen.SETTINGS.route) }
+                onNavigateToSettings = { navController.navigate(Screen.SETTINGS.route) },
+                onNavigateToPlaylists = { navController.navigate(Screen.PLAYLISTS.route) },
+                onNavigateToFavorites = { navController.navigate(Screen.FAVORITES.route) }
             )
         }
         composable(Screen.SEARCH.route) {
             val searchViewModel: SearchViewModel = viewModel(factory = SearchViewModel.getViewModelFactory())
             SearchScreen(
                 viewModel = searchViewModel,
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                onTrackClick = { track ->
+                    navController.navigate("track_details/${track.id}")
+                }
             )
         }
         composable(Screen.SETTINGS.route) {
             SettingsScreen(onBackClick = { navController.popBackStack() })
         }
+        composable(Screen.PLAYLISTS.route) {
+            val playlistsViewModel: PlaylistsViewModel = viewModel()
+            PlaylistsScreen(
+                viewModel = playlistsViewModel,
+                onAddPlaylist = { navController.navigate(Screen.NEW_PLAYLIST.route) },
+                onBackClick = { navController.popBackStack() },
+                onPlaylistClick = { /* пока не используется */ }
+            )
+        }
+        composable(Screen.FAVORITES.route) {
+            FavoritesScreen(onBackClick = { navController.popBackStack() })
+        }
+        composable(Screen.NEW_PLAYLIST.route) {
+            val playlistsViewModel: PlaylistsViewModel = viewModel()
+            NewPlaylistScreen(
+                onSave = { name, description ->
+                    playlistsViewModel.createNewPlaylist(name, description)
+                },
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+        composable(
+            route = Screen.TRACK_DETAILS.route,
+            arguments = listOf(navArgument("trackId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val trackId = backStackEntry.arguments?.getLong("trackId") ?: return@composable
+            val trackDetailsViewModel: TrackDetailsViewModel = viewModel()
+            val playlistsViewModel: PlaylistsViewModel = viewModel()
+            TrackDetailsScreen(
+                trackId = trackId,
+                trackDetailsViewModel = trackDetailsViewModel,
+                playlistsViewModel = playlistsViewModel,
+                onBackClick = { navController.popBackStack() }
+            )
+        }
     }
 }
 
 // --- Главный экран ---
+// MainScreen с onNavigateToPlaylists и onNavigateToFavorites
 @Composable
-fun MainScreen(onNavigateToSearch: () -> Unit, onNavigateToSettings: () -> Unit) {
+fun MainScreen(
+    onNavigateToSearch: () -> Unit,
+    onNavigateToSettings: () -> Unit,
+    onNavigateToPlaylists: () -> Unit,
+    onNavigateToFavorites: () -> Unit
+) {
     val darkTheme = isSystemInDarkTheme()
     val backgroundColor = if (darkTheme) Color(0xFF141419) else Color(0xFFF2F2F2)
     val menuBackgroundColor = if (darkTheme) Color(0xFF1B1C20) else Color.White
@@ -122,11 +176,7 @@ fun MainScreen(onNavigateToSearch: () -> Unit, onNavigateToSettings: () -> Unit)
                 .padding(start = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = stringResource(R.string.app_title),   // было "Playlist maker"
-                color = Color.White,
-                fontSize = 22.sp
-            )
+            Text(text = stringResource(R.string.app_title), color = Color.White, fontSize = 22.sp)
         }
 
         Column(
@@ -137,36 +187,10 @@ fun MainScreen(onNavigateToSearch: () -> Unit, onNavigateToSettings: () -> Unit)
                 .background(menuBackgroundColor)
                 .padding(top = 20.dp + 24.dp)
         ) {
-            MainMenuItem(
-                icon = Icons.Default.Search,
-                text = stringResource(R.string.menu_search),       // было "Поиск"
-                iconColor = iconColor,
-                textColor = textColor,
-                arrowColor = arrowColor,
-                onClick = onNavigateToSearch
-            )
-            MainMenuItem(
-                icon = Icons.AutoMirrored.Filled.List,
-                text = stringResource(R.string.menu_playlists),    // было "Плейлисты"
-                iconColor = iconColor,
-                textColor = textColor,
-                arrowColor = arrowColor
-            ) { /* TODO */ }
-            MainMenuItem(
-                icon = Icons.Default.FavoriteBorder,
-                text = stringResource(R.string.menu_favorites),    // было "Избранное"
-                iconColor = iconColor,
-                textColor = textColor,
-                arrowColor = arrowColor
-            ) { /* TODO */ }
-            MainMenuItem(
-                icon = Icons.Default.Settings,
-                text = stringResource(R.string.menu_settings),     // было "Настройки"
-                iconColor = iconColor,
-                textColor = textColor,
-                arrowColor = arrowColor,
-                onClick = onNavigateToSettings
-            )
+            MainMenuItem(icon = Icons.Default.Search, text = stringResource(R.string.menu_search), iconColor = iconColor, textColor = textColor, arrowColor = arrowColor, onClick = onNavigateToSearch)
+            MainMenuItem(icon = Icons.AutoMirrored.Filled.List, text = stringResource(R.string.menu_playlists), iconColor = iconColor, textColor = textColor, arrowColor = arrowColor, onClick = onNavigateToPlaylists)
+            MainMenuItem(icon = Icons.Default.FavoriteBorder, text = stringResource(R.string.menu_favorites), iconColor = iconColor, textColor = textColor, arrowColor = arrowColor, onClick = onNavigateToFavorites)
+            MainMenuItem(icon = Icons.Default.Settings, text = stringResource(R.string.menu_settings), iconColor = iconColor, textColor = textColor, arrowColor = arrowColor, onClick = onNavigateToSettings)
         }
     }
 }
@@ -333,25 +357,18 @@ fun SettingsItem(
 @Composable
 fun SearchScreen(
     viewModel: SearchViewModel,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onTrackClick: (Track) -> Unit
 ) {
     val screenState by viewModel.searchScreenState.collectAsState()
     var text by remember { mutableStateOf("") }
     var isFocused by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
-
     val historyList by viewModel.historyState.collectAsState()
 
-    // Передаём текст в ViewModel при каждом изменении (debounce внутри)
-    LaunchedEffect(text) {
-        viewModel.updateQuery(text)
-    }
-
-    // Снимаем фокус при успешном поиске
+    LaunchedEffect(text) { viewModel.updateQuery(text) }
     LaunchedEffect(screenState) {
-        if (screenState is SearchState.Success) {
-            focusManager.clearFocus()
-        }
+        if (screenState is SearchState.Success) focusManager.clearFocus()
     }
 
     val darkTheme = isSystemInDarkTheme()
@@ -364,50 +381,23 @@ fun SearchScreen(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.search_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = textColor
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = backgroundColor,
-                    titleContentColor = textColor
-                )
+                navigationIcon = { IconButton(onClick = onBackClick) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = textColor) } },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = backgroundColor, titleContentColor = textColor)
             )
         },
         containerColor = backgroundColor
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-        ) {
+        Column(modifier = Modifier.padding(innerPadding).fillMaxSize().padding(horizontal = 16.dp, vertical = 8.dp)) {
             OutlinedTextField(
                 value = text,
                 onValueChange = { newText -> text = newText },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .onFocusChanged { focusState -> isFocused = focusState.isFocused },
+                modifier = Modifier.fillMaxWidth().onFocusChanged { isFocused = it.isFocused },
                 placeholder = { Text(stringResource(R.string.search_placeholder), color = placeholderColor) },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "Поиск",
-                        tint = placeholderColor
-                    )
-                },
+                leadingIcon = { Icon(Icons.Default.Search, "Поиск", tint = placeholderColor) },
                 trailingIcon = {
                     if (text.isNotEmpty()) {
-                        IconButton(onClick = {
-                            text = ""
-                            viewModel.clearSearch()
-                        }) {
-                            Icon(Icons.Default.Close, contentDescription = "Очистить", tint = placeholderColor)
+                        IconButton(onClick = { text = ""; viewModel.clearSearch() }) {
+                            Icon(Icons.Default.Close, "Очистить", tint = placeholderColor)
                         }
                     }
                 },
@@ -424,62 +414,29 @@ fun SearchScreen(
                     unfocusedTextColor = textColor
                 )
             )
-
             Spacer(modifier = Modifier.height(8.dp))
-
-            // История поиска
             if (isFocused && text.isEmpty() && historyList.isNotEmpty()) {
-                HistoryRequests(
-                    historyList = historyList,
-                    onClick = { word ->
-                        text = word
-                        viewModel.updateQuery(word)
-                    }
-                )
+                HistoryRequests(historyList = historyList, onClick = { word -> text = word; viewModel.updateQuery(word) })
             }
-
-            // Состояния
             when (screenState) {
                 is SearchState.Initial -> {
-                    if (text.isEmpty()) {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text(stringResource(R.string.search_initial_message), color = textColor)
-                        }
-                    } else {
-                        // Поиск активирован, но ждём debounce
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator()
-                        }
-                    }
+                    if (text.isEmpty()) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text(stringResource(R.string.search_initial_message), color = textColor) }
+                    else Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
                 }
-                is SearchState.Searching -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
-                }
+                is SearchState.Searching -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
                 is SearchState.Success -> {
                     val tracks = (screenState as SearchState.Success).foundList
-                    if (tracks.isEmpty()) {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text(stringResource(R.string.no_songs_found), color = textColor)
-                        }
-                    } else {
-                        LazyColumn(modifier = Modifier.fillMaxSize()) {
-                            items(tracks) { track ->
-                                TrackListItem(
-                                    track = track,
-                                    onClick = { /* обработка клика, пока не используется */ }
-                                )
-                                HorizontalDivider(thickness = 0.5.dp, color = if (darkTheme) Color.Gray else Color.LightGray)
-                            }
+                    if (tracks.isEmpty()) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text(stringResource(R.string.no_songs_found), color = textColor) }
+                    else LazyColumn(Modifier.fillMaxSize()) {
+                        items(tracks) { track ->
+                            TrackListItem(track = track, onClick = { onTrackClick(track) })
+                            HorizontalDivider(thickness = 0.5.dp, color = if (darkTheme) Color.Gray else Color.LightGray)
                         }
                     }
                 }
                 is SearchState.Fail -> {
                     val error = (screenState as SearchState.Fail).error
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(stringResource(R.string.search_error_template, error), color = Color.Red)
-                    }
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text(stringResource(R.string.search_error_template, error), color = Color.Red) }
                 }
             }
         }
@@ -495,7 +452,6 @@ fun HistoryRequests(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(max = 200.dp)
-            .background(Color.Transparent)
     ) {
         items(historyList) { word ->
             Row(
@@ -519,28 +475,14 @@ fun HistoryRequests(
 }
 
 @Composable
-fun TrackListItem(
-    track: Track,
-    onClick: () -> Unit
-) {
+fun TrackListItem(track: Track, onClick: () -> Unit) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(vertical = 12.dp, horizontal = 16.dp),
+        modifier = Modifier.fillMaxWidth().clickable { onClick() }.padding(vertical = 12.dp, horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Image(
-            painter = painterResource(id = R.drawable.ic_music),
-            contentDescription = "Обложка трека",
-            modifier = Modifier.size(45.dp)
-        )
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .padding(start = 16.dp)
-        ) {
+        Image(painter = painterResource(id = R.drawable.ic_music), contentDescription = "Обложка", modifier = Modifier.size(45.dp))
+        Column(modifier = Modifier.weight(1f).padding(start = 16.dp)) {
             Text(track.trackName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
             Text(track.artistName, fontSize = 14.sp, color = Color.Gray)
         }
