@@ -4,9 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.playlist_maker_android_solominilya.creator.Creator
-import com.example.playlist_maker_android_solominilya.domain.api.SearchHistoryRepository
 import com.example.playlist_maker_android_solominilya.domain.api.TracksManagementRepository
+import com.example.playlist_maker_android_solominilya.domain.api.SearchHistoryRepository
 import com.example.playlist_maker_android_solominilya.domain.api.TracksRepository
+import com.example.playlist_maker_android_solominilya.domain.models.Track
 import com.example.playlist_maker_android_solominilya.domain.models.Word
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,7 +26,6 @@ class SearchViewModel(
     private val searchHistoryRepository: SearchHistoryRepository =
         Creator.provideSearchHistoryRepository(viewModelScope)
 
-    // Общий репозиторий для сохранения треков в избранное/плейлисты
     private val tracksManagementRepo: TracksManagementRepository =
         Creator.provideTracksManagementRepository(viewModelScope)
 
@@ -36,6 +36,8 @@ class SearchViewModel(
     private val _historyState = MutableStateFlow<List<Word>>(emptyList())
     val historyState: StateFlow<List<Word>> = _historyState.asStateFlow()
 
+    private var currentQuery: String? = null
+
     init {
         refreshHistory()
         viewModelScope.launch {
@@ -44,7 +46,7 @@ class SearchViewModel(
                 .distinctUntilChanged()
                 .collect { query ->
                     if (query.isNotEmpty()) {
-                        performSearch(query)
+                        search(query)
                     }
                 }
         }
@@ -54,18 +56,21 @@ class SearchViewModel(
         _searchQuery.value = query
     }
 
-    private fun performSearch(request: String) {
+    fun search(whatSearch: String) {
+        currentQuery = whatSearch
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 _searchScreenState.update { SearchState.Searching }
-                searchHistoryRepository.addToHistory(Word(word = request))
+                searchHistoryRepository.addToHistory(Word(word = whatSearch))
                 refreshHistory()
-                val list = tracksRepository.searchTracks(request)
-                // Копируем найденные треки в общее хранилище
+                val list = tracksRepository.searchTracks(whatSearch)
+                // Сохраняем найденные треки для доступа из плейлистов/избранного
                 list.forEach { tracksManagementRepo.insertTrack(it) }
                 _searchScreenState.update { SearchState.Success(foundList = list) }
             } catch (e: IOException) {
-                _searchScreenState.update { SearchState.Fail(e.message.toString()) }
+                _searchScreenState.update { SearchState.Fail("Проблемы с сетью", whatSearch) }
+            } catch (e: Exception) {
+                _searchScreenState.update { SearchState.Fail(e.message ?: "Ошибка", whatSearch) }
             }
         }
     }

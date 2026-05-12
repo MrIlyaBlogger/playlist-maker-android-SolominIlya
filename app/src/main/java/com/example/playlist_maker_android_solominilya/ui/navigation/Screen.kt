@@ -7,5 +7,6 @@ enum class Screen(val route: String) {
     PLAYLISTS("playlists"),
     FAVORITES("favorites"),
     NEW_PLAYLIST("new_playlist"),
-    TRACK_DETAILS("track_details/{trackId}")
+    TRACK_DETAILS("track_details/{trackId}"),
+    PLAYLIST_DETAILS("playlist_details/{playlistId}")
 }

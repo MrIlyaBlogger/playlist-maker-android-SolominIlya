@@ -50,7 +50,13 @@ class DatabaseMock(private val scope: CoroutineScope) {
     }
 
     fun getPlaylist(id: Long): Flow<Playlist?> = flow {
-        emit(playlists.find { it.id == id })
+        val playlist = playlists.find { it.id == id }
+        if (playlist != null) {
+            val playlistTracks = tracks.filter { it.playlistId == id }
+            emit(playlist.copy(tracks = playlistTracks))
+        } else {
+            emit(null)
+        }
     }
 
     fun addNewPlaylist(name: String, description: String) {
@@ -73,24 +79,23 @@ class DatabaseMock(private val scope: CoroutineScope) {
     }
 
     // --- Треки ---
-    fun getTrackById(trackId: Long): Track? = tracks.find { it.id == trackId }
-
+    fun getTrackById(trackId: Long): Track? = tracks.find { it.trackId == trackId }
     fun getTrackByNameAndArtist(track: Track): Flow<Track?> = flow {
         emit(tracks.find { it.trackName == track.trackName && it.artistName == track.artistName })
     }
 
     fun insertTrack(track: Track) {
-        tracks.removeIf { it.id == track.id }
+        tracks.removeIf { it.trackId == track.trackId }
         tracks.add(track)
     }
 
     fun getFavoriteTracks(): Flow<List<Track>> = flow {
         delay(300)
-        emit(tracks.filter { it.favorite })
+        emit(tracks.filter { it.isFavorite })
     }
 
     fun deleteTrackFromPlaylist(trackId: Long) {
-        tracks.removeIf { it.id == trackId }
+        tracks.removeIf { it.trackId == trackId }
     }
 
     fun searchTracks(expression: String): List<Track> {
