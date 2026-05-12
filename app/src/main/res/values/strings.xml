@@ -8,11 +8,18 @@
     <string name="menu_favorites">Избранное</string>
     <string name="menu_settings">Настройки</string>
 
+    <string name="playlists_title">Плейлисты</string>
+    <string name="new_playlist_title">Новый плейлист</string>
+    <string name="track_details_title">Детали трека</string>
+
     <!-- Экран поиска -->
     <string name="search_title">Поиск</string>
     <string name="search_placeholder">Поиск</string>
     <string name="search_initial_message">Введите строку для поиска</string>
     <string name="search_error_template">Ошибка: %1$s</string>
+
+    <string name="no_songs_found">Ничего не найдено</string>
+    <string name="history_title">История поиска</string>
 
     <!-- Settings Screen -->
     <string name="settings_title">Настройки</string>
