@@ -2,17 +2,33 @@ package com.example.playlist_maker_android_solominilya.ui.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.repeatOnLifecycle
-import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,13 +52,6 @@ fun PlaylistScreen(
 ) {
     val playlist by playlistViewModel.playlist.collectAsState()
 
-    val lifecycleOwner = LocalLifecycleOwner.current
-    LaunchedEffect(lifecycleOwner) {
-        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            playlistViewModel.loadPlaylist()
-        }
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -55,13 +64,12 @@ fun PlaylistScreen(
             )
         }
     ) { innerPadding ->
-        playlist?.let { playlist ->
+        playlist?.let { currentPlaylist ->
             Column(
                 modifier = Modifier
                     .padding(innerPadding)
                     .fillMaxSize()
             ) {
-                // Обложка плейлиста
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -80,20 +88,20 @@ fun PlaylistScreen(
                 Spacer(modifier = Modifier.height(16.dp))
                 Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                     Text(
-                        text = playlist.name,
+                        text = currentPlaylist.name,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold
                     )
-                    if (playlist.description.isNotBlank()) {
+                    if (currentPlaylist.description.isNotBlank()) {
                         Text(
-                            text = playlist.description,
+                            text = currentPlaylist.description,
                             fontSize = 14.sp,
                             color = Color.Gray
                         )
                     }
-                    val totalMinutes = playlist.tracks.sumOf { it.trackTimeMillis } / 60000
+                    val totalMinutes = currentPlaylist.tracks.sumOf { it.trackTimeMillis } / 60000
                     Text(
-                        "$totalMinutes минут · ${playlist.tracks.size} треков",
+                        "$totalMinutes минут · ${currentPlaylist.tracks.size} треков",
                         fontSize = 14.sp,
                         color = Color.Gray
                     )
@@ -101,7 +109,7 @@ fun PlaylistScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(playlist.tracks) { track ->
+                    items(currentPlaylist.tracks) { track ->
                         TrackItemForPlaylist(track = track, onClick = { onTrackClick(track) })
                         HorizontalDivider()
                     }

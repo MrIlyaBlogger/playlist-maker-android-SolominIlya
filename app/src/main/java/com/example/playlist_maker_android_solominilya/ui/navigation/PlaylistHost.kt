@@ -1,7 +1,6 @@
 package com.example.playlist_maker_android_solominilya.ui.navigation
 
 import android.content.Intent
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -10,7 +9,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -22,9 +20,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.ui.layout.ContentScale
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -64,8 +59,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -78,6 +74,8 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.playlist_maker_android_solominilya.R
 import com.example.playlist_maker_android_solominilya.domain.models.Track
 import com.example.playlist_maker_android_solominilya.domain.models.Word
@@ -108,19 +106,15 @@ fun PlaylistHost(navController: NavHostController) {
             SearchScreen(
                 viewModel = searchViewModel,
                 onBackClick = { navController.popBackStack() },
-                onTrackClick = { track ->
-                    navController.navigate("track_details/${track.trackId}")
-                }
+                onTrackClick = { track -> navController.navigate("track_details/${track.trackId}") }
             )
         }
         composable(Screen.SETTINGS.route) {
             SettingsScreen(onBackClick = { navController.popBackStack() })
         }
-
         composable(Screen.FAVORITES.route) {
             FavoritesScreen(onBackClick = { navController.popBackStack() })
         }
-
         composable(Screen.PLAYLISTS.route) {
             val playlistsViewModel: PlaylistsViewModel = viewModel()
             PlaylistsScreen(
@@ -131,7 +125,9 @@ fun PlaylistHost(navController: NavHostController) {
             )
         }
         composable(Screen.NEW_PLAYLIST.route) {
-            val playlistsViewModel: PlaylistsViewModel = viewModel()
+            val playlistsViewModel: PlaylistsViewModel = viewModel(
+                viewModelStoreOwner = navController.getBackStackEntry(Screen.PLAYLISTS.route)
+            )
             NewPlaylistScreen(
                 onSave = { name, description -> playlistsViewModel.createNewPlaylist(name, description) },
                 onBackClick = { navController.popBackStack() }
@@ -149,14 +145,13 @@ fun PlaylistHost(navController: NavHostController) {
                 onTrackClick = { track -> navController.navigate("track_details/${track.trackId}") }
             )
         }
-
         composable(
             route = Screen.TRACK_DETAILS.route,
             arguments = listOf(navArgument("trackId") { type = NavType.LongType })
         ) { backStackEntry ->
             val trackId = backStackEntry.arguments?.getLong("trackId") ?: return@composable
             val trackDetailsViewModel: TrackDetailsViewModel = viewModel()
-            val playlistsViewModel: PlaylistsViewModel = viewModel()   // <-- просто viewModel(), без factory
+            val playlistsViewModel: PlaylistsViewModel = viewModel()
             TrackDetailsScreen(
                 trackId = trackId,
                 trackDetailsViewModel = trackDetailsViewModel,
@@ -164,25 +159,9 @@ fun PlaylistHost(navController: NavHostController) {
                 onBackClick = { navController.popBackStack() }
             )
         }
-
-        composable(
-            route = Screen.PLAYLIST_DETAILS.route,
-            arguments = listOf(navArgument("playlistId") { type = NavType.LongType })
-        ) { backStackEntry ->
-            val playlistId = backStackEntry.arguments?.getLong("playlistId") ?: return@composable
-            val playlistViewModel: PlaylistViewModel = viewModel(factory = PlaylistViewModel.factory(playlistId))
-            PlaylistScreen(
-                playlistViewModel = playlistViewModel,
-                onBackClick = { navController.popBackStack() },
-                onTrackClick = { track ->
-                    navController.navigate("track_details/${track.trackId}")
-                }
-            )
-        }
     }
 }
 
-// --- Главный экран ---
 @Composable
 fun MainScreen(
     onNavigateToSearch: () -> Unit,
@@ -219,12 +198,12 @@ fun MainScreen(
                 .offset(y = (-20).dp)
                 .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
                 .background(menuBackgroundColor)
-                .padding(top = 20.dp + 24.dp)
+                .padding(top = 44.dp)
         ) {
-            MainMenuItem(icon = Icons.Default.Search, text = stringResource(R.string.menu_search), iconColor = iconColor, textColor = textColor, arrowColor = arrowColor, onClick = onNavigateToSearch)
-            MainMenuItem(icon = Icons.AutoMirrored.Filled.List, text = stringResource(R.string.menu_playlists), iconColor = iconColor, textColor = textColor, arrowColor = arrowColor, onClick = onNavigateToPlaylists)
-            MainMenuItem(icon = Icons.Default.FavoriteBorder, text = stringResource(R.string.menu_favorites), iconColor = iconColor, textColor = textColor, arrowColor = arrowColor, onClick = onNavigateToFavorites)
-            MainMenuItem(icon = Icons.Default.Settings, text = stringResource(R.string.menu_settings), iconColor = iconColor, textColor = textColor, arrowColor = arrowColor, onClick = onNavigateToSettings)
+            MainMenuItem(Icons.Default.Search, stringResource(R.string.menu_search), iconColor, textColor, arrowColor, onNavigateToSearch)
+            MainMenuItem(Icons.AutoMirrored.Filled.List, stringResource(R.string.menu_playlists), iconColor, textColor, arrowColor, onNavigateToPlaylists)
+            MainMenuItem(Icons.Default.FavoriteBorder, stringResource(R.string.menu_favorites), iconColor, textColor, arrowColor, onNavigateToFavorites)
+            MainMenuItem(Icons.Default.Settings, stringResource(R.string.menu_settings), iconColor, textColor, arrowColor, onNavigateToSettings)
         }
     }
 }
@@ -249,11 +228,10 @@ fun MainMenuItem(
         Icon(imageVector = icon, contentDescription = text, tint = iconColor)
         Spacer(modifier = Modifier.width(8.dp))
         Text(text = text, color = textColor, fontSize = 16.sp, modifier = Modifier.weight(1f))
-        Icon(imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Go", tint = arrowColor)
+        Icon(imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = arrowColor)
     }
 }
 
-// --- Экран настроек (без изменений) ---
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(onBackClick: () -> Unit) {
@@ -270,7 +248,7 @@ fun SettingsScreen(onBackClick: () -> Unit) {
                 title = { Text(stringResource(id = R.string.settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -282,16 +260,25 @@ fun SettingsScreen(onBackClick: () -> Unit) {
         },
         containerColor = if (darkTheme) Color(0xFF1B1C20) else Color.White
     ) { innerPadding ->
-        Column(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize()
+        ) {
             SettingsItem(title = stringResource(id = R.string.dark_theme), icon = null, isSwitchVisible = true)
             SettingsItem(title = stringResource(id = R.string.share_app), icon = Icons.Default.Share) {
-                val intent = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, shareMessage) }
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, shareMessage)
+                }
                 context.startActivity(Intent.createChooser(intent, null))
             }
             SettingsItem(title = stringResource(id = R.string.write_to_support), icon = Icons.Outlined.Headset) {
                 val intent = Intent(Intent.ACTION_SENDTO).apply {
-                    data = "mailto:".toUri(); putExtra(Intent.EXTRA_EMAIL, arrayOf("mr.ilyablogger@ya.ru"))
-                    putExtra(Intent.EXTRA_SUBJECT, supportSubject); putExtra(Intent.EXTRA_TEXT, supportBody)
+                    data = "mailto:".toUri()
+                    putExtra(Intent.EXTRA_EMAIL, arrayOf("mr.ilyablogger@ya.ru"))
+                    putExtra(Intent.EXTRA_SUBJECT, supportSubject)
+                    putExtra(Intent.EXTRA_TEXT, supportBody)
                 }
                 context.startActivity(intent)
             }
@@ -342,7 +329,6 @@ fun SettingsItem(
     }
 }
 
-// --- Экран поиска ---
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
@@ -353,7 +339,6 @@ fun SearchScreen(
     val screenState by viewModel.searchScreenState.collectAsState()
     var text by remember { mutableStateOf("") }
     var isFocused by remember { mutableStateOf(false) }
-    val focusManager = LocalFocusManager.current
     val historyList by viewModel.historyState.collectAsState()
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -369,27 +354,38 @@ fun SearchScreen(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.search_title)) },
-                navigationIcon = { IconButton(onClick = onBackClick) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = textColor) } },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад", tint = textColor)
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = backgroundColor, titleContentColor = textColor)
             )
         },
         containerColor = backgroundColor
     ) { innerPadding ->
-        Column(modifier = Modifier.padding(innerPadding).fillMaxSize().padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+        ) {
             OutlinedTextField(
                 value = text,
                 onValueChange = { newText -> text = newText },
-                modifier = Modifier.fillMaxWidth().onFocusChanged { isFocused = it.isFocused },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onFocusChanged { isFocused = it.isFocused },
                 placeholder = { Text(stringResource(R.string.search_placeholder), color = placeholderColor) },
-                leadingIcon = { Icon(Icons.Default.Search, "Поиск", tint = placeholderColor) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Поиск", tint = placeholderColor) },
                 trailingIcon = {
                     if (text.isNotEmpty()) {
                         IconButton(onClick = {
                             text = ""
                             viewModel.clearSearch()
-                            keyboardController?.hide()  // скрываем клавиатуру
+                            keyboardController?.hide()
                         }) {
-                            Icon(Icons.Default.Close, "Очистить", tint = placeholderColor)
+                            Icon(Icons.Default.Close, contentDescription = "Очистить", tint = placeholderColor)
                         }
                     }
                 },
@@ -409,15 +405,29 @@ fun SearchScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
             if (isFocused && text.isEmpty() && historyList.isNotEmpty()) {
-                HistoryRequests(historyList = historyList, onClick = { word -> text = word; viewModel.updateQuery(word) })
+                HistoryRequests(historyList = historyList, onClick = { word ->
+                    text = word
+                    viewModel.updateQuery(word)
+                })
             }
 
             when (screenState) {
                 is SearchState.Initial -> {
-                    if (text.isEmpty()) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text(stringResource(R.string.search_initial_message), color = textColor) }
-                    else Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+                    if (text.isEmpty()) {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text(stringResource(R.string.search_initial_message), color = textColor)
+                        }
+                    } else {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
+                    }
                 }
-                is SearchState.Searching -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+                is SearchState.Searching -> {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                }
                 is SearchState.Success -> {
                     val tracks = (screenState as SearchState.Success).foundList
                     if (tracks.isEmpty()) {
@@ -433,10 +443,7 @@ fun SearchScreen(
                 }
                 is SearchState.Fail -> {
                     val fail = screenState as SearchState.Fail
-                    ErrorPlaceholder(
-                        message = fail.error,
-                        onRetry = { viewModel.search(fail.retryQuery) }
-                    )
+                    ErrorPlaceholder(message = fail.error, onRetry = { viewModel.search(fail.retryQuery) })
                 }
             }
         }
@@ -493,7 +500,11 @@ fun TrackListItem(track: Track, onClick: () -> Unit) {
             placeholder = painterResource(id = R.drawable.ic_music),
             error = painterResource(id = R.drawable.ic_music)
         )
-        Column(modifier = Modifier.weight(1f).padding(start = 16.dp)) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 16.dp)
+        ) {
             Text(track.trackName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
             Text(track.artistName, fontSize = 14.sp, color = Color.Gray)
         }

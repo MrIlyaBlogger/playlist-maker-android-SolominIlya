@@ -1,15 +1,38 @@
 package com.example.playlist_maker_android_solominilya.ui.screen
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.PlaylistAdd
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -21,7 +44,6 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.playlist_maker_android_solominilya.R
-import com.example.playlist_maker_android_solominilya.domain.models.Playlist   // <-- важно!
 import com.example.playlist_maker_android_solominilya.ui.viewmodel.PlaylistsViewModel
 import com.example.playlist_maker_android_solominilya.ui.viewmodel.TrackDetailsViewModel
 
@@ -30,15 +52,15 @@ import com.example.playlist_maker_android_solominilya.ui.viewmodel.TrackDetailsV
 fun TrackDetailsScreen(
     trackId: Long,
     trackDetailsViewModel: TrackDetailsViewModel,
-    playlistsViewModel: PlaylistsViewModel,   // <-- правильный тип
+    playlistsViewModel: PlaylistsViewModel,
     onBackClick: () -> Unit
 ) {
     LaunchedEffect(trackId) {
         trackDetailsViewModel.loadTrack(trackId)
     }
+
     val track by trackDetailsViewModel.track.collectAsState()
     val playlists by playlistsViewModel.playlists.collectAsState(emptyList())
-
     var showBottomSheet by remember { mutableStateOf(false) }
 
     if (showBottomSheet) {
@@ -53,14 +75,12 @@ fun TrackDetailsScreen(
                         items(playlists) { playlist ->
                             TextButton(
                                 onClick = {
-                                    track?.let {
-                                        trackDetailsViewModel.addToPlaylist(it, playlist.id)
-                                    }
+                                    track?.let { trackDetailsViewModel.addToPlaylist(it, playlist.id) }
                                     showBottomSheet = false
                                 },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text(playlist.name)  // теперь работает, потому что импортирован Playlist
+                                Text(playlist.name)
                             }
                         }
                     }
@@ -81,7 +101,7 @@ fun TrackDetailsScreen(
             )
         }
     ) { innerPadding ->
-        track?.let { track ->
+        track?.let { currentTrack ->
             Column(
                 modifier = Modifier
                     .padding(innerPadding)
@@ -91,35 +111,35 @@ fun TrackDetailsScreen(
             ) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
-                        .data(track.artworkUrl100)
+                        .data(currentTrack.artworkUrl100)
                         .crossfade(true)
                         .build(),
-                    contentDescription = track.trackName,
+                    contentDescription = currentTrack.trackName,
                     modifier = Modifier.size(200.dp),
                     placeholder = painterResource(id = R.drawable.ic_music),
                     error = painterResource(id = R.drawable.ic_music)
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
-                Text(track.trackName, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                Text(track.artistName, fontSize = 18.sp, color = Color.Gray)
+                Text(currentTrack.trackName, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                Text(currentTrack.artistName, fontSize = 18.sp, color = Color.Gray)
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(track.formattedTime, fontSize = 16.sp)
+                Text(currentTrack.formattedTime, fontSize = 16.sp)
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     IconButton(onClick = {
-                        trackDetailsViewModel.toggleFavorite(track, !track.isFavorite)
+                        trackDetailsViewModel.toggleFavorite(currentTrack, !currentTrack.isFavorite)
                     }) {
                         Icon(
-                            imageVector = if (track.isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                            imageVector = if (currentTrack.isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                             contentDescription = "Избранное",
-                            tint = if (track.isFavorite) Color.Red else Color.Gray
+                            tint = if (currentTrack.isFavorite) Color.Red else Color.Gray
                         )
                     }
                     IconButton(onClick = { showBottomSheet = true }) {
                         Icon(
-                            imageVector = Icons.Filled.PlaylistAdd,
+                            imageVector = Icons.AutoMirrored.Filled.PlaylistAdd,
                             contentDescription = "Добавить в плейлист",
                             tint = Color.Gray
                         )
