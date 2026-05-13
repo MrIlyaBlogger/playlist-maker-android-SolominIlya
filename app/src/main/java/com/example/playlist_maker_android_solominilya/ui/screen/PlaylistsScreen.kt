@@ -85,6 +85,7 @@ fun PlaylistsScreen(
                             Spacer(modifier = Modifier.width(16.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(playlist.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                Text("${playlist.trackCount} треков", color = Color.Gray, fontSize = 14.sp)
                             }
                         }
                         HorizontalDivider()
