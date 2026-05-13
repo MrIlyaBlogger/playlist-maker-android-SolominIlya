@@ -24,15 +24,13 @@ class PlaylistViewModel(
 
     init {
         viewModelScope.launch {
-            playlistsRepository.getPlaylist(playlistId).collect { playlist ->
-                if (playlist != null) {
-                    tracksManagementRepo.getTracksByPlaylist(playlistId).collect { tracks ->
-                        _playlist.value = playlist.copy(tracks = tracks)
-                    }
-                } else {
-                    _playlist.value = null
+            playlistsRepository.getPlaylist(playlistId)
+                .combine(tracksManagementRepo.getTracksByPlaylist(playlistId)) { playlist, tracks ->
+                    playlist?.copy(tracks = tracks)
                 }
-            }
+                .collect { playlist ->
+                    _playlist.value = playlist
+                }
         }
     }
 

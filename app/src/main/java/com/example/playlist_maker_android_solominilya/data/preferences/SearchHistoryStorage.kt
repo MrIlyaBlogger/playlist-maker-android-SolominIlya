@@ -9,12 +9,11 @@ class SearchHistoryStorage(context: Context) {
     fun addEntry(word: String) {
         if (word.isBlank()) return
         val history = getEntries().map { it.word }.toMutableList()
-        history.remove(word)
-        history.add(0, word)
-        if (history.size > MAX_ENTRIES) {
-            history.subList(0, MAX_ENTRIES)
-        }
-        val serialized = history.joinToString(SEPARATOR)
+        val normalizedWord = word.trim()
+        history.remove(normalizedWord)
+        history.add(0, normalizedWord)
+        val trimmedHistory = history.take(MAX_ENTRIES)
+        val serialized = trimmedHistory.joinToString(SEPARATOR)
         prefs.edit().putString(KEY_HISTORY, serialized).apply()
     }
 

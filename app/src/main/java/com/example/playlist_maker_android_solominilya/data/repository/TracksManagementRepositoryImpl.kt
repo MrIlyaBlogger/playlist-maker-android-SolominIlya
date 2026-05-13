@@ -23,15 +23,18 @@ class TracksManagementRepositoryImpl(private val database: AppDatabase) : Tracks
     }
 
     override suspend fun insertTrackToPlaylist(track: Track, playlistId: Long) {
-        trackDao.insertTrack(track.copy(playlistId = playlistId).toEntity())
+        val currentTrack = trackDao.getTrackById(track.trackId)?.toDomainModel()
+        trackDao.insertTrack((currentTrack ?: track).copy(playlistId = playlistId).toEntity())
     }
 
     override suspend fun deleteTrackFromPlaylist(track: Track) {
-        trackDao.insertTrack(track.copy(playlistId = 0).toEntity())
+        val currentTrack = trackDao.getTrackById(track.trackId)?.toDomainModel()
+        trackDao.insertTrack((currentTrack ?: track).copy(playlistId = 0).toEntity())
     }
 
     override suspend fun updateTrackFavoriteStatus(track: Track, isFavorite: Boolean) {
-        trackDao.insertTrack(track.copy(isFavorite = isFavorite).toEntity())
+        val currentTrack = trackDao.getTrackById(track.trackId)?.toDomainModel()
+        trackDao.insertTrack((currentTrack ?: track).copy(isFavorite = isFavorite).toEntity())
     }
 
     override suspend fun deleteTracksByPlaylistId(playlistId: Long) {
@@ -43,7 +46,13 @@ class TracksManagementRepositoryImpl(private val database: AppDatabase) : Tracks
     }
 
     override suspend fun insertTrack(track: Track) {
-        trackDao.insertTrack(track.toEntity())
+        val currentTrack = trackDao.getTrackById(track.trackId)?.toDomainModel()
+        trackDao.insertTrack(
+            track.copy(
+                isFavorite = currentTrack?.isFavorite ?: track.isFavorite,
+                playlistId = currentTrack?.playlistId ?: track.playlistId
+            ).toEntity()
+        )
     }
 
     override fun getTracksByPlaylist(playlistId: Long): Flow<List<Track>> {
