@@ -13,4 +13,5 @@ interface TracksManagementRepository {
     suspend fun deleteTracksByPlaylistId(playlistId: Long)
     suspend fun getTrackById(trackId: Long): Track?
     suspend fun insertTrack(track: Track)
+    fun getTracksByPlaylist(playlistId: Long): Flow<List<Track>>   // <-- новый метод
 }

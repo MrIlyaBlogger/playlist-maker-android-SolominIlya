@@ -14,8 +14,12 @@ class TracksRepositoryImpl(
         val response = networkClient.doRequest(TracksSearchRequest(expression))
         if (response.resultCode == 200 && response is TracksSearchResponse) {
             return response.results.map { dto ->
+                val id = if (dto.trackId != 0L) dto.trackId else if (dto.id != 0L) dto.id else {
+                    // генерируем уникальный хэш по названию и артисту
+                    (dto.trackName.hashCode() * 31L + dto.artistName.hashCode()).toLong().let { it and 0x7FFFFFFFFFFFFFFFL }
+                }
                 Track(
-                    trackId = dto.trackId,
+                    trackId = id,
                     trackName = dto.trackName ?: "Неизвестно",
                     artistName = dto.artistName ?: "Неизвестный исполнитель",
                     trackTimeMillis = dto.trackTimeMillis ?: 0L,

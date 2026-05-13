@@ -1,24 +1,23 @@
 package com.example.playlist_maker_android_solominilya.data.repository
 
-import com.example.playlist_maker_android_solominilya.data.DatabaseMock
+import com.example.playlist_maker_android_solominilya.data.preferences.SearchHistoryStorage
 import com.example.playlist_maker_android_solominilya.domain.api.SearchHistoryRepository
 import com.example.playlist_maker_android_solominilya.domain.models.Word
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.MutableSharedFlow
 
-class SearchHistoryRepositoryImpl(scope: CoroutineScope) : SearchHistoryRepository {
-
-    private val database = DatabaseMock(scope)
-
-    override fun getHistoryRequests(): List<Word> = database.getHistoryRequests()
+class SearchHistoryRepositoryImpl(private val storage: SearchHistoryStorage) : SearchHistoryRepository {
+    override fun getHistoryRequests(): List<Word> = storage.getEntries()
 
     override fun addToHistory(word: Word) {
-        database.addToHistory(word)
+        storage.addEntry(word.word)
     }
 
     override fun clearHistory() {
-        database.clearHistory()
+        storage.clear()
     }
 
-    override fun getHistoryUpdates(): MutableSharedFlow<Unit> = database.getHistoryUpdates()
+    override fun getHistoryUpdates(): kotlinx.coroutines.flow.MutableSharedFlow<Unit> {
+        // SharedFlow не используется, вместо этого будем обновлять через refreshHistory во ViewModel
+        // Можно вернуть пустой, если не нужен
+        return kotlinx.coroutines.flow.MutableSharedFlow()
+    }
 }

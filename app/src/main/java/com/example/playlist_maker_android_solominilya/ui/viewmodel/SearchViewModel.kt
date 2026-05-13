@@ -7,7 +7,6 @@ import com.example.playlist_maker_android_solominilya.creator.Creator
 import com.example.playlist_maker_android_solominilya.domain.api.TracksManagementRepository
 import com.example.playlist_maker_android_solominilya.domain.api.SearchHistoryRepository
 import com.example.playlist_maker_android_solominilya.domain.api.TracksRepository
-import com.example.playlist_maker_android_solominilya.domain.models.Track
 import com.example.playlist_maker_android_solominilya.domain.models.Word
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,10 +23,10 @@ class SearchViewModel(
 ) : ViewModel() {
 
     private val searchHistoryRepository: SearchHistoryRepository =
-        Creator.provideSearchHistoryRepository(viewModelScope)
+        Creator.provideSearchHistoryRepository()
 
     private val tracksManagementRepo: TracksManagementRepository =
-        Creator.provideTracksManagementRepository(viewModelScope)
+        Creator.provideTracksManagementRepository()
 
     private val _searchQuery = MutableStateFlow("")
     private val _searchScreenState = MutableStateFlow<SearchState>(SearchState.Initial)
@@ -35,8 +34,6 @@ class SearchViewModel(
 
     private val _historyState = MutableStateFlow<List<Word>>(emptyList())
     val historyState: StateFlow<List<Word>> = _historyState.asStateFlow()
-
-    private var currentQuery: String? = null
 
     init {
         refreshHistory()
@@ -57,18 +54,19 @@ class SearchViewModel(
     }
 
     fun search(whatSearch: String) {
-        currentQuery = whatSearch
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 _searchScreenState.update { SearchState.Searching }
                 searchHistoryRepository.addToHistory(Word(word = whatSearch))
                 refreshHistory()
                 val list = tracksRepository.searchTracks(whatSearch)
-                // Сохраняем найденные треки для доступа из плейлистов/избранного
-                list.forEach { tracksManagementRepo.insertTrack(it) }
+                // Сохраняем каждый трек в общую базу Room
+                list.forEach { track ->
+                    tracksManagementRepo.insertTrack(track)
+                }
                 _searchScreenState.update { SearchState.Success(foundList = list) }
             } catch (e: IOException) {
-                _searchScreenState.update { SearchState.Fail("Проблемы с сетью", whatSearch) }
+                _searchScreenState.update { SearchState.Fail(e.message ?: "Ошибка сети", whatSearch) }
             } catch (e: Exception) {
                 _searchScreenState.update { SearchState.Fail(e.message ?: "Ошибка", whatSearch) }
             }

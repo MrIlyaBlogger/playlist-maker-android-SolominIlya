@@ -130,10 +130,16 @@ fun PlaylistHost(navController: NavHostController) {
                 onPlaylistClick = { playlistId -> navController.navigate("playlist_details/$playlistId") }
             )
         }
+
         composable(Screen.NEW_PLAYLIST.route) {
-            val playlistsViewModel: PlaylistsViewModel = viewModel()
+            // Получаем тот же экземпляр ViewModel, что и у списка плейлистов
+            val playlistsViewModel: PlaylistsViewModel = viewModel(
+                viewModelStoreOwner = navController.getBackStackEntry(Screen.PLAYLISTS.route)
+            )
             NewPlaylistScreen(
-                onSave = { name, description -> playlistsViewModel.createNewPlaylist(name, description) },
+                onSave = { name, description ->
+                    playlistsViewModel.createNewPlaylist(name, description)
+                },
                 onBackClick = { navController.popBackStack() }
             )
         }

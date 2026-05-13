@@ -37,11 +37,6 @@ fun PlaylistScreen(
     val playlist by playlistViewModel.playlist.collectAsState()
 
     val lifecycleOwner = LocalLifecycleOwner.current
-    LaunchedEffect(lifecycleOwner) {
-        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            playlistViewModel.loadPlaylist()
-        }
-    }
 
     Scaffold(
         topBar = {

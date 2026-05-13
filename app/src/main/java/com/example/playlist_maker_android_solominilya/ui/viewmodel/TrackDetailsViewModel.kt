@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class TrackDetailsViewModel : ViewModel() {
-    private val tracksRepo: TracksManagementRepository = Creator.provideTracksManagementRepository(viewModelScope)
+    private val tracksRepo: TracksManagementRepository = Creator.provideTracksManagementRepository()
 
     private val _track = MutableStateFlow<Track?>(null)
     val track: StateFlow<Track?> = _track.asStateFlow()

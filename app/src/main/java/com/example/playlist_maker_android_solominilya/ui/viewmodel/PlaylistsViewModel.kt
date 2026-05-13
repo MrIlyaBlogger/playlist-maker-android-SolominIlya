@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 
 class PlaylistsViewModel : ViewModel() {
-    private val playlistsRepository: PlaylistsRepository = Creator.providePlaylistsRepository(viewModelScope)
+    private val playlistsRepository = Creator.providePlaylistsRepository()
 
     val playlists: Flow<List<Playlist>> = flow {
         playlistsRepository.getAllPlaylists().collect { list ->

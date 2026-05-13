@@ -1,7 +1,9 @@
 package com.example.playlist_maker_android_solominilya.creator
 
-import com.example.playlist_maker_android_solominilya.data.DatabaseMock
+import com.example.playlist_maker_android_solominilya.App
+import com.example.playlist_maker_android_solominilya.data.db.AppDatabase
 import com.example.playlist_maker_android_solominilya.data.network.RetrofitNetworkClient
+import com.example.playlist_maker_android_solominilya.data.preferences.SearchHistoryStorage
 import com.example.playlist_maker_android_solominilya.data.repository.PlaylistsRepositoryImpl
 import com.example.playlist_maker_android_solominilya.data.repository.SearchHistoryRepositoryImpl
 import com.example.playlist_maker_android_solominilya.data.repository.TracksManagementRepositoryImpl
@@ -10,27 +12,32 @@ import com.example.playlist_maker_android_solominilya.domain.api.PlaylistsReposi
 import com.example.playlist_maker_android_solominilya.domain.api.SearchHistoryRepository
 import com.example.playlist_maker_android_solominilya.domain.api.TracksManagementRepository
 import com.example.playlist_maker_android_solominilya.domain.api.TracksRepository
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import androidx.room.Room
 
 object Creator {
-    // Единая база данных для плейлистов и избранного
-    private val databaseMock = DatabaseMock(CoroutineScope(Dispatchers.IO))
+    private val database: AppDatabase by lazy {
+        Room.databaseBuilder(App.instance, AppDatabase::class.java, "playlist_maker.db")
+            .fallbackToDestructiveMigration()   // <-- добавить
+            .build()
+    }
 
-    // Поисковый репозиторий – использует сетевой клиент
     val tracksRepository: TracksRepository by lazy {
         TracksRepositoryImpl(RetrofitNetworkClient())
     }
 
-    fun provideSearchHistoryRepository(scope: CoroutineScope): SearchHistoryRepository {
-        return SearchHistoryRepositoryImpl(scope)
+    private val searchHistoryStorage by lazy {
+        SearchHistoryStorage(App.instance)
     }
 
-    fun provideTracksManagementRepository(scope: CoroutineScope): TracksManagementRepository {
-        return TracksManagementRepositoryImpl(scope, databaseMock)
+    fun provideSearchHistoryRepository(): SearchHistoryRepository {
+        return SearchHistoryRepositoryImpl(searchHistoryStorage)
     }
 
-    fun providePlaylistsRepository(scope: CoroutineScope): PlaylistsRepository {
-        return PlaylistsRepositoryImpl(scope, databaseMock)
+    fun provideTracksManagementRepository(): TracksManagementRepository {
+        return TracksManagementRepositoryImpl(database)
+    }
+
+    fun providePlaylistsRepository(): PlaylistsRepository {
+        return PlaylistsRepositoryImpl(database)
     }
 }
