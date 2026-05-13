@@ -23,8 +23,16 @@ class PlaylistsRepositoryImpl(private val database: AppDatabase) : PlaylistsRepo
     }
 
     override fun getAllPlaylists(): Flow<List<Playlist>> {
-        return playlistDao.getAllPlaylists().map { entities ->
-            entities.map { it.toDomainModel(emptyList()) }
+        return playlistDao.getAllPlaylistsWithTrackCount().map { entities ->
+            entities.map { entity ->
+                Playlist(
+                    id = entity.id,
+                    name = entity.name,
+                    description = entity.description,
+                    trackCount = entity.trackCount,
+                    tracks = emptyList()
+                )
+            }
         }
     }
 
