@@ -36,7 +36,6 @@ import androidx.compose.material.icons.outlined.Headset
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -378,46 +377,64 @@ fun SearchScreen(
                 .fillMaxSize()
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            OutlinedTextField(
-                value = text,
-                onValueChange = { newText -> text = newText },
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .onFocusChanged { isFocused = it.isFocused },
-                placeholder = { Text(stringResource(R.string.search_placeholder), color = placeholderColor) },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Поиск", tint = placeholderColor) },
-                trailingIcon = {
-                    if (text.isNotEmpty()) {
-                        IconButton(onClick = {
-                            text = ""
-                            viewModel.clearSearch()
-                            keyboardController?.hide()
-                        }) {
-                            Icon(Icons.Default.Close, contentDescription = "Очистить", tint = placeholderColor)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(searchFieldBackgroundColor)
+            ) {
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { newText -> text = newText },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onFocusChanged { isFocused = it.isFocused },
+                    placeholder = { Text(stringResource(R.string.search_placeholder), color = placeholderColor) },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Поиск", tint = placeholderColor) },
+                    trailingIcon = {
+                        if (text.isNotEmpty()) {
+                            IconButton(onClick = {
+                                text = ""
+                                viewModel.clearSearch()
+                                keyboardController?.hide()
+                            }) {
+                                Icon(Icons.Default.Close, contentDescription = "Очистить", tint = placeholderColor)
+                            }
                         }
-                    }
-                },
-                shape = RoundedCornerShape(8.dp),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = searchFieldBackgroundColor,
-                    unfocusedContainerColor = searchFieldBackgroundColor,
-                    disabledContainerColor = searchFieldBackgroundColor,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                    disabledIndicatorColor = Color.Transparent,
-                    cursorColor = textColor,
-                    focusedTextColor = textColor,
-                    unfocusedTextColor = textColor
+                    },
+                    shape = RoundedCornerShape(8.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = searchFieldBackgroundColor,
+                        unfocusedContainerColor = searchFieldBackgroundColor,
+                        disabledContainerColor = searchFieldBackgroundColor,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        disabledIndicatorColor = Color.Transparent,
+                        cursorColor = textColor,
+                        focusedTextColor = textColor,
+                        unfocusedTextColor = textColor
+                    )
                 )
-            )
+
+                if (isFocused && text.isEmpty() && historyList.isNotEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(0.5.dp)
+                            .background(textColor.copy(alpha = 0.2f))
+                    )
+                    HistoryRequests(
+                        historyList = historyList,
+                        onClick = { word ->
+                            text = word
+                            viewModel.updateQuery(word)
+                        },
+                        textColor = textColor
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(8.dp))
-            if (isFocused && text.isEmpty() && historyList.isNotEmpty()) {
-                HistoryRequests(historyList = historyList, onClick = { word ->
-                    text = word
-                    viewModel.updateQuery(word)
-                })
-            }
 
             when (screenState) {
                 is SearchState.Initial -> {
@@ -460,7 +477,8 @@ fun SearchScreen(
 @Composable
 fun HistoryRequests(
     historyList: List<Word>,
-    onClick: (String) -> Unit
+    onClick: (String) -> Unit,
+    textColor: Color
 ) {
     LazyColumn(
         modifier = Modifier
@@ -475,11 +493,15 @@ fun HistoryRequests(
                     .padding(vertical = 12.dp, horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(imageVector = Icons.Filled.History, contentDescription = null, tint = Color.Gray)
+                Icon(imageVector = Icons.Filled.History, contentDescription = null, tint = textColor.copy(alpha = 0.6f))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = word.word, color = Color.Gray)
+                Text(
+                    text = word.word,
+                    color = textColor,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
             }
-            HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray)
         }
     }
 }
