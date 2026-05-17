@@ -7,5 +7,6 @@ interface PlaylistsRepository {
     fun getPlaylist(playlistId: Long): Flow<Playlist?>
     fun getAllPlaylists(): Flow<List<Playlist>>
     suspend fun addNewPlaylist(name: String, description: String, coverImagePath: String?)
+    suspend fun updatePlaylistCover(playlistId: Long, coverImagePath: String?)
     suspend fun deletePlaylistById(id: Long)
 }

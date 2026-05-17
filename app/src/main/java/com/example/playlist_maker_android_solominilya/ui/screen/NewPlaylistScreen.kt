@@ -1,6 +1,5 @@
 package com.example.playlist_maker_android_solominilya.ui.screen
 
-import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -38,13 +37,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toUri
 import coil.compose.AsyncImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.io.File
-import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -139,23 +134,5 @@ fun NewPlaylistScreen(
                 Text("Сохранить")
             }
         }
-    }
-}
-
-private suspend fun copyPlaylistCoverToInternalStorage(context: Context, sourceUri: Uri): String? {
-    return withContext(Dispatchers.IO) {
-        runCatching {
-            val coversDirectory = File(context.filesDir, "playlist_covers")
-            if (!coversDirectory.exists()) {
-                coversDirectory.mkdirs()
-            }
-            val coverFile = File(coversDirectory, "${UUID.randomUUID()}.jpg")
-            context.contentResolver.openInputStream(sourceUri)?.use { inputStream ->
-                coverFile.outputStream().use { outputStream ->
-                    inputStream.copyTo(outputStream)
-                }
-            } ?: return@runCatching null
-            coverFile.toUri().toString()
-        }.getOrNull()
     }
 }

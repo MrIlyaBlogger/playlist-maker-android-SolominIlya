@@ -48,6 +48,10 @@ class PlaylistsRepositoryImpl(private val database: AppDatabase) : PlaylistsRepo
         )
     }
 
+    override suspend fun updatePlaylistCover(playlistId: Long, coverImagePath: String?) {
+        playlistDao.updatePlaylistCover(playlistId, coverImagePath)
+    }
+
     override suspend fun deletePlaylistById(id: Long) {
         playlistDao.deletePlaylistById(id)
     }

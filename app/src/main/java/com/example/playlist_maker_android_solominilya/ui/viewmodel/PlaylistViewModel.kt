@@ -22,6 +22,12 @@ class PlaylistViewModel(
     private val _playlist = MutableStateFlow<Playlist?>(null)
     val playlist: StateFlow<Playlist?> = _playlist.asStateFlow()
 
+    fun updateCoverImage(coverImagePath: String?) {
+        viewModelScope.launch {
+            playlistsRepository.updatePlaylistCover(playlistId, coverImagePath)
+        }
+    }
+
     init {
         viewModelScope.launch {
             playlistsRepository.getPlaylist(playlistId)
