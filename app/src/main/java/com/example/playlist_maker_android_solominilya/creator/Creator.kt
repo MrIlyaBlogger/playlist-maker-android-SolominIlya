@@ -19,14 +19,38 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 object Creator {
     private val migration1To2 = object : Migration(1, 2) {
         override fun migrate(db: SupportSQLiteDatabase) {
-            db.execSQL("ALTER TABLE playlists ADD COLUMN coverImagePath TEXT")
+            addCoverImagePathColumnIfNeeded(db)
+        }
+    }
+
+    private val migration2To3 = object : Migration(2, 3) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            addCoverImagePathColumnIfNeeded(db)
         }
     }
 
     private val database: AppDatabase by lazy {
         Room.databaseBuilder(App.instance, AppDatabase::class.java, "playlist_maker.db")
-            .addMigrations(migration1To2)
+            .addMigrations(migration1To2, migration2To3)
             .build()
+    }
+
+    private fun addCoverImagePathColumnIfNeeded(db: SupportSQLiteDatabase) {
+        db.query("PRAGMA table_info(playlists)").use { cursor ->
+            val nameColumnIndex = cursor.getColumnIndex("name")
+            var hasCoverImagePathColumn = false
+
+            while (cursor.moveToNext()) {
+                if (cursor.getString(nameColumnIndex) == "coverImagePath") {
+                    hasCoverImagePathColumn = true
+                    break
+                }
+            }
+
+            if (!hasCoverImagePathColumn) {
+                db.execSQL("ALTER TABLE playlists ADD COLUMN coverImagePath TEXT")
+            }
+        }
     }
 
     val tracksRepository: TracksRepository by lazy {
