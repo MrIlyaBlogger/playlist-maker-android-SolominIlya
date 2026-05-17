@@ -9,7 +9,7 @@ import com.example.playlist_maker_android_solominilya.data.db.entity.TrackEntity
 
 @Database(
     entities = [TrackEntity::class, PlaylistEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
