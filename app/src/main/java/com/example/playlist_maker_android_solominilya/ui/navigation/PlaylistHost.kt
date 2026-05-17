@@ -36,7 +36,6 @@ import androidx.compose.material.icons.outlined.Headset
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -480,6 +479,8 @@ fun HistoryRequests(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(max = 200.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(backgroundColor)
     ) {
         items(historyList) { word ->
             Row(
