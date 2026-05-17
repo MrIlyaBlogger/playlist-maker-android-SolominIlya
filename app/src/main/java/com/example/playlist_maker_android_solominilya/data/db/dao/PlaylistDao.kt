@@ -18,9 +18,9 @@ interface PlaylistDao {
 
     @Query(
         """
-        SELECT playlists.id, playlists.name, playlists.description, playlists.coverImagePath, COUNT(tracks.trackId) as trackCount
+        SELECT playlists.id, playlists.name, playlists.description, playlists.coverImagePath, COUNT(playlist_tracks.track_id) as trackCount
         FROM playlists
-        LEFT JOIN tracks ON playlists.id = tracks.playlist_id
+        LEFT JOIN playlist_tracks ON playlists.id = playlist_tracks.playlist_id
         GROUP BY playlists.id, playlists.name, playlists.description, playlists.coverImagePath
         """
     )

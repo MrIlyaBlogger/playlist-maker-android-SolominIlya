@@ -35,9 +35,17 @@ object Creator {
         }
     }
 
+    private val migration4To5 = object : Migration(4, 5) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            normalizePlaylistsTable(db)
+            createPlaylistTracksTable(db)
+            migrateLegacyTrackPlaylistLinks(db)
+        }
+    }
+
     private val database: AppDatabase by lazy {
         Room.databaseBuilder(App.instance, AppDatabase::class.java, "playlist_maker.db")
-            .addMigrations(migration1To2, migration2To3, migration3To4)
+            .addMigrations(migration1To2, migration2To3, migration3To4, migration4To5)
             .build()
     }
 
@@ -60,6 +68,33 @@ object Creator {
         copyPlaylistsToNormalizedTable(db, playlistColumns)
         db.execSQL("DROP TABLE $PLAYLISTS_TABLE")
         db.execSQL("ALTER TABLE $PLAYLISTS_TEMP_TABLE RENAME TO $PLAYLISTS_TABLE")
+    }
+
+    private fun createPlaylistTracksTable(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS $PLAYLIST_TRACKS_TABLE (
+                playlist_id INTEGER NOT NULL,
+                track_id INTEGER NOT NULL,
+                PRIMARY KEY(playlist_id, track_id)
+            )
+            """.trimIndent()
+        )
+    }
+
+    private fun migrateLegacyTrackPlaylistLinks(db: SupportSQLiteDatabase) {
+        if (!tableExists(db, TRACKS_TABLE) || !getColumnNames(db, TRACKS_TABLE).contains("playlist_id")) {
+            return
+        }
+
+        db.execSQL(
+            """
+            INSERT OR IGNORE INTO $PLAYLIST_TRACKS_TABLE (playlist_id, track_id)
+            SELECT playlist_id, trackId
+            FROM $TRACKS_TABLE
+            WHERE playlist_id != 0
+            """.trimIndent()
+        )
     }
 
     private fun tableExists(db: SupportSQLiteDatabase, tableName: String): Boolean {
@@ -137,6 +172,8 @@ object Creator {
 
     private const val PLAYLISTS_TABLE = "playlists"
     private const val PLAYLISTS_TEMP_TABLE = "playlists_new"
+    private const val PLAYLIST_TRACKS_TABLE = "playlist_tracks"
+    private const val TRACKS_TABLE = "tracks"
 
     private val EXPECTED_PLAYLIST_COLUMNS = setOf(
         "id",
