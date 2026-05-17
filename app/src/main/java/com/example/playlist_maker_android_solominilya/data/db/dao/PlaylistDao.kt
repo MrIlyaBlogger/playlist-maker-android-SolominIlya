@@ -31,4 +31,7 @@ interface PlaylistDao {
 
     @Query("DELETE FROM playlists WHERE id = :playlistId")
     suspend fun deletePlaylistById(playlistId: Long)
+
+    @Query("UPDATE playlists SET coverImagePath = :coverImagePath WHERE id = :playlistId")
+    suspend fun updatePlaylistCover(playlistId: Long, coverImagePath: String?)
 }
