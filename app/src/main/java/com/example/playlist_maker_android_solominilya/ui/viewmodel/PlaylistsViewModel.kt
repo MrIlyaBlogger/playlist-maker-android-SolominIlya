@@ -10,7 +10,7 @@ class PlaylistsViewModel : ViewModel() {
 
     val playlists: Flow<List<Playlist>> = playlistsRepository.getAllPlaylists()
 
-    suspend fun createNewPlaylist(name: String, description: String) {
-        playlistsRepository.addNewPlaylist(name, description)
+    suspend fun createNewPlaylist(name: String, description: String, coverImagePath: String?) {
+        playlistsRepository.addNewPlaylist(name, description, coverImagePath)
     }
 }

@@ -132,7 +132,7 @@ fun PlaylistHost(navController: NavHostController) {
                 viewModelStoreOwner = navController.getBackStackEntry(Screen.PLAYLISTS.route)
             )
             NewPlaylistScreen(
-                onSave = { name, description -> playlistsViewModel.createNewPlaylist(name, description) },
+                onSave = { name, description, coverImagePath -> playlistsViewModel.createNewPlaylist(name, description, coverImagePath) },
                 onBackClick = { navController.popBackStack() }
             )
         }
