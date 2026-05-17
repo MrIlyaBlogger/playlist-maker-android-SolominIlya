@@ -4,5 +4,6 @@ data class PlaylistWithTrackCount(
     val id: Long,
     val name: String,
     val description: String,
+    val coverImagePath: String?,
     val trackCount: Int
 )

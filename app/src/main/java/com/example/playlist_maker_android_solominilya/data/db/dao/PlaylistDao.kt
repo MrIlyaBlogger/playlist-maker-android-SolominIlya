@@ -18,10 +18,10 @@ interface PlaylistDao {
 
     @Query(
         """
-        SELECT playlists.id, playlists.name, playlists.description, COUNT(tracks.trackId) as trackCount
+        SELECT playlists.id, playlists.name, playlists.description, playlists.coverImagePath, COUNT(playlist_tracks.track_id) as trackCount
         FROM playlists
-        LEFT JOIN tracks ON playlists.id = tracks.playlist_id
-        GROUP BY playlists.id
+        LEFT JOIN playlist_tracks ON playlists.id = playlist_tracks.playlist_id
+        GROUP BY playlists.id, playlists.name, playlists.description, playlists.coverImagePath
         """
     )
     fun getAllPlaylistsWithTrackCount(): Flow<List<PlaylistWithTrackCount>>
@@ -31,4 +31,7 @@ interface PlaylistDao {
 
     @Query("DELETE FROM playlists WHERE id = :playlistId")
     suspend fun deletePlaylistById(playlistId: Long)
+
+    @Query("UPDATE playlists SET coverImagePath = :coverImagePath WHERE id = :playlistId")
+    suspend fun updatePlaylistCover(playlistId: Long, coverImagePath: String?)
 }

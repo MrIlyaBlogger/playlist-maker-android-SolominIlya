@@ -1,7 +1,9 @@
 package com.example.playlist_maker_android_solominilya.ui.screen
 
-import androidx.compose.foundation.background
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,19 +19,22 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -39,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import kotlinx.coroutines.launch
 import com.example.playlist_maker_android_solominilya.R
 import com.example.playlist_maker_android_solominilya.domain.models.Track
 import com.example.playlist_maker_android_solominilya.ui.viewmodel.PlaylistViewModel
@@ -51,6 +57,21 @@ fun PlaylistScreen(
     onTrackClick: (Track) -> Unit
 ) {
     val playlist by playlistViewModel.playlist.collectAsState()
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val coverPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri ->
+            uri?.let { selectedUri ->
+                scope.launch {
+                    val savedCoverPath = copyPlaylistCoverToInternalStorage(context, selectedUri)
+                    if (savedCoverPath != null) {
+                        playlistViewModel.updateCoverImage(savedCoverPath)
+                    }
+                }
+            }
+        }
+    )
 
     Scaffold(
         topBar = {
@@ -73,16 +94,39 @@ fun PlaylistScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(200.dp)
-                        .background(MaterialTheme.colorScheme.primaryContainer),
+                        .height(200.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_music),
-                        contentDescription = null,
-                        modifier = Modifier.size(80.dp),
-                        tint = Color.White
-                    )
+                    if (currentPlaylist.coverImagePath != null) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(context)
+                                .data(currentPlaylist.coverImagePath)
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = currentPlaylist.name,
+                            modifier = Modifier
+                                .size(200.dp)
+                                .clip(RoundedCornerShape(8.dp)),
+                            contentScale = ContentScale.Crop,
+                            placeholder = painterResource(id = R.drawable.ic_music),
+                            error = painterResource(id = R.drawable.ic_music)
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .size(200.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { coverPickerLauncher.launch("image/*") },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AddPhotoAlternate,
+                                contentDescription = "Добавить обложку",
+                                modifier = Modifier.size(64.dp),
+                                tint = Color.Gray
+                            )
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -111,7 +155,6 @@ fun PlaylistScreen(
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
                     items(currentPlaylist.tracks) { track ->
                         TrackItemForPlaylist(track = track, onClick = { onTrackClick(track) })
-                        HorizontalDivider()
                     }
                 }
             }
@@ -145,8 +188,16 @@ fun TrackItemForPlaylist(track: Track, onClick: () -> Unit) {
         Spacer(modifier = Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(track.trackName, fontWeight = FontWeight.Medium)
-            Text(track.artistName, fontSize = 14.sp, color = Color.Gray)
+            Text(
+                text = "${track.artistName} · ${track.formattedTime}",
+                fontSize = 12.sp,
+                color = Color.Gray
+            )
         }
-        Text(track.formattedTime, fontSize = 14.sp, color = Color.Gray)
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            tint = Color.Gray.copy(alpha = 0.45f)
+        )
     }
 }

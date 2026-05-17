@@ -3,6 +3,7 @@ package com.example.playlist_maker_android_solominilya.ui.navigation
 import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,7 +36,6 @@ import androidx.compose.material.icons.outlined.Headset
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -113,7 +113,10 @@ fun PlaylistHost(navController: NavHostController) {
             SettingsScreen(onBackClick = { navController.popBackStack() })
         }
         composable(Screen.FAVORITES.route) {
-            FavoritesScreen(onBackClick = { navController.popBackStack() })
+            FavoritesScreen(
+                onBackClick = { navController.popBackStack() },
+                onTrackClick = { trackId -> navController.navigate("track_details/$trackId") }
+            )
         }
         composable(Screen.PLAYLISTS.route) {
             val playlistsViewModel: PlaylistsViewModel = viewModel()
@@ -129,7 +132,7 @@ fun PlaylistHost(navController: NavHostController) {
                 viewModelStoreOwner = navController.getBackStackEntry(Screen.PLAYLISTS.route)
             )
             NewPlaylistScreen(
-                onSave = { name, description -> playlistsViewModel.createNewPlaylist(name, description) },
+                onSave = { name, description, coverImagePath -> playlistsViewModel.createNewPlaylist(name, description, coverImagePath) },
                 onBackClick = { navController.popBackStack() }
             )
         }
@@ -228,7 +231,11 @@ fun MainMenuItem(
         Icon(imageVector = icon, contentDescription = text, tint = iconColor)
         Spacer(modifier = Modifier.width(8.dp))
         Text(text = text, color = textColor, fontSize = 16.sp, modifier = Modifier.weight(1f))
-        Icon(imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = arrowColor)
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            tint = arrowColor.copy(alpha = 0.45f)
+        )
     }
 }
 
@@ -370,46 +377,64 @@ fun SearchScreen(
                 .fillMaxSize()
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            OutlinedTextField(
-                value = text,
-                onValueChange = { newText -> text = newText },
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .onFocusChanged { isFocused = it.isFocused },
-                placeholder = { Text(stringResource(R.string.search_placeholder), color = placeholderColor) },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Поиск", tint = placeholderColor) },
-                trailingIcon = {
-                    if (text.isNotEmpty()) {
-                        IconButton(onClick = {
-                            text = ""
-                            viewModel.clearSearch()
-                            keyboardController?.hide()
-                        }) {
-                            Icon(Icons.Default.Close, contentDescription = "Очистить", tint = placeholderColor)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(searchFieldBackgroundColor)
+            ) {
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { newText -> text = newText },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onFocusChanged { isFocused = it.isFocused },
+                    placeholder = { Text(stringResource(R.string.search_placeholder), color = placeholderColor) },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Поиск", tint = placeholderColor) },
+                    trailingIcon = {
+                        if (text.isNotEmpty()) {
+                            IconButton(onClick = {
+                                text = ""
+                                viewModel.clearSearch()
+                                keyboardController?.hide()
+                            }) {
+                                Icon(Icons.Default.Close, contentDescription = "Очистить", tint = placeholderColor)
+                            }
                         }
-                    }
-                },
-                shape = RoundedCornerShape(8.dp),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = searchFieldBackgroundColor,
-                    unfocusedContainerColor = searchFieldBackgroundColor,
-                    disabledContainerColor = searchFieldBackgroundColor,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                    disabledIndicatorColor = Color.Transparent,
-                    cursorColor = textColor,
-                    focusedTextColor = textColor,
-                    unfocusedTextColor = textColor
+                    },
+                    shape = RoundedCornerShape(8.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = searchFieldBackgroundColor,
+                        unfocusedContainerColor = searchFieldBackgroundColor,
+                        disabledContainerColor = searchFieldBackgroundColor,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        disabledIndicatorColor = Color.Transparent,
+                        cursorColor = textColor,
+                        focusedTextColor = textColor,
+                        unfocusedTextColor = textColor
+                    )
                 )
-            )
+
+                if (isFocused && text.isEmpty() && historyList.isNotEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(0.5.dp)
+                            .background(textColor.copy(alpha = 0.2f))
+                    )
+                    HistoryRequests(
+                        historyList = historyList,
+                        onClick = { word ->
+                            text = word
+                            viewModel.updateQuery(word)
+                        },
+                        textColor = textColor
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(8.dp))
-            if (isFocused && text.isEmpty() && historyList.isNotEmpty()) {
-                HistoryRequests(historyList = historyList, onClick = { word ->
-                    text = word
-                    viewModel.updateQuery(word)
-                })
-            }
 
             when (screenState) {
                 is SearchState.Initial -> {
@@ -436,7 +461,6 @@ fun SearchScreen(
                         LazyColumn(Modifier.fillMaxSize()) {
                             items(tracks) { track ->
                                 TrackListItem(track = track, onClick = { onTrackClick(track) })
-                                HorizontalDivider(thickness = 0.5.dp, color = if (darkTheme) Color.Gray else Color.LightGray)
                             }
                         }
                     }
@@ -453,12 +477,18 @@ fun SearchScreen(
 @Composable
 fun HistoryRequests(
     historyList: List<Word>,
-    onClick: (String) -> Unit
+    onClick: (String) -> Unit,
+    textColor: Color
 ) {
+    val darkTheme = isSystemInDarkTheme()
+    val backgroundColor = if (darkTheme) Color(0xFF2C2C2E) else Color(0xFFEFEFF4)
+
     LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(max = 200.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(backgroundColor)
     ) {
         items(historyList) { word ->
             Row(
@@ -468,21 +498,28 @@ fun HistoryRequests(
                     .padding(vertical = 12.dp, horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(imageVector = Icons.Filled.History, contentDescription = null, tint = Color.Gray)
+                Icon(imageVector = Icons.Filled.History, contentDescription = null, tint = textColor.copy(alpha = 0.6f))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = word.word, color = Color.Gray)
+                Text(
+                    text = word.word,
+                    color = textColor,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
             }
-            HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray)
         }
     }
 }
 
 @Composable
-fun TrackListItem(track: Track, onClick: () -> Unit) {
+fun TrackListItem(track: Track, onLongClick: (() -> Unit)? = null, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() }
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            )
             .padding(vertical = 12.dp, horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
@@ -506,9 +543,17 @@ fun TrackListItem(track: Track, onClick: () -> Unit) {
                 .padding(start = 16.dp)
         ) {
             Text(track.trackName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Text(track.artistName, fontSize = 14.sp, color = Color.Gray)
+            Text(
+                text = "${track.artistName} · ${track.formattedTime}",
+                fontSize = 12.sp,
+                color = Color.Gray
+            )
         }
-        Text(track.formattedTime, fontSize = 14.sp, color = Color.Gray)
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            tint = Color.Gray.copy(alpha = 0.45f)
+        )
     }
 }
 

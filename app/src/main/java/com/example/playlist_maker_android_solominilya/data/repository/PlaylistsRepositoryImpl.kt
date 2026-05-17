@@ -29,6 +29,7 @@ class PlaylistsRepositoryImpl(private val database: AppDatabase) : PlaylistsRepo
                     id = entity.id,
                     name = entity.name,
                     description = entity.description,
+                    coverImagePath = entity.coverImagePath,
                     trackCount = entity.trackCount,
                     tracks = emptyList()
                 )
@@ -36,11 +37,24 @@ class PlaylistsRepositoryImpl(private val database: AppDatabase) : PlaylistsRepo
         }
     }
 
-    override suspend fun addNewPlaylist(name: String, description: String) {
-        playlistDao.insertPlaylist(Playlist(id = 0, name = name, description = description).toEntity())
+    override suspend fun addNewPlaylist(name: String, description: String, coverImagePath: String?) {
+        playlistDao.insertPlaylist(
+            Playlist(
+                id = 0,
+                name = name,
+                description = description,
+                coverImagePath = coverImagePath
+            ).toEntity()
+        )
+    }
+
+    override suspend fun updatePlaylistCover(playlistId: Long, coverImagePath: String?) {
+        playlistDao.updatePlaylistCover(playlistId, coverImagePath)
     }
 
     override suspend fun deletePlaylistById(id: Long) {
+        trackDao.deletePlaylistTracksByPlaylistId(id)
+        trackDao.deleteTracksWithoutReferences()
         playlistDao.deletePlaylistById(id)
     }
 }
