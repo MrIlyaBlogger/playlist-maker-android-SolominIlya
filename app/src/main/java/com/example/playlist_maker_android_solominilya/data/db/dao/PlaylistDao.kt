@@ -18,10 +18,10 @@ interface PlaylistDao {
 
     @Query(
         """
-        SELECT playlists.id, playlists.name, playlists.description, COUNT(tracks.trackId) as trackCount
+        SELECT playlists.id, playlists.name, playlists.description, playlists.coverImagePath, COUNT(tracks.trackId) as trackCount
         FROM playlists
         LEFT JOIN tracks ON playlists.id = tracks.playlist_id
-        GROUP BY playlists.id
+        GROUP BY playlists.id, playlists.name, playlists.description, playlists.coverImagePath
         """
     )
     fun getAllPlaylistsWithTrackCount(): Flow<List<PlaylistWithTrackCount>>
