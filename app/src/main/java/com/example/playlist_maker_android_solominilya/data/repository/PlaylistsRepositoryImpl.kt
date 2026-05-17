@@ -53,6 +53,8 @@ class PlaylistsRepositoryImpl(private val database: AppDatabase) : PlaylistsRepo
     }
 
     override suspend fun deletePlaylistById(id: Long) {
+        trackDao.deletePlaylistTracksByPlaylistId(id)
+        trackDao.deleteTracksWithoutReferences()
         playlistDao.deletePlaylistById(id)
     }
 }

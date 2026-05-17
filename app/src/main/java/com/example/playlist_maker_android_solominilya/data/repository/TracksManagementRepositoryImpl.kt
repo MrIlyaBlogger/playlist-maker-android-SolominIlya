@@ -1,6 +1,7 @@
 package com.example.playlist_maker_android_solominilya.data.repository
 
 import com.example.playlist_maker_android_solominilya.data.db.AppDatabase
+import com.example.playlist_maker_android_solominilya.data.db.entity.PlaylistTrackCrossRefEntity
 import com.example.playlist_maker_android_solominilya.data.db.toDomainModel
 import com.example.playlist_maker_android_solominilya.data.db.toEntity
 import com.example.playlist_maker_android_solominilya.domain.api.TracksManagementRepository
@@ -24,12 +25,22 @@ class TracksManagementRepositoryImpl(private val database: AppDatabase) : Tracks
 
     override suspend fun insertTrackToPlaylist(track: Track, playlistId: Long) {
         val currentTrack = trackDao.getTrackById(track.trackId)?.toDomainModel()
-        trackDao.insertTrack((currentTrack ?: track).copy(playlistId = playlistId).toEntity())
+        val trackToSave = (currentTrack ?: track).copy(
+            isFavorite = currentTrack?.isFavorite ?: track.isFavorite
+        )
+
+        trackDao.insertTrack(trackToSave.toEntity())
+        trackDao.insertPlaylistTrack(
+            PlaylistTrackCrossRefEntity(
+                playlistId = playlistId,
+                trackId = track.trackId
+            )
+        )
     }
 
     override suspend fun deleteTrackFromPlaylist(track: Track) {
-        val currentTrack = trackDao.getTrackById(track.trackId)?.toDomainModel()
-        trackDao.insertTrack((currentTrack ?: track).copy(playlistId = 0).toEntity())
+        trackDao.deleteTrackFromPlaylist(track.trackId, track.playlistId)
+        trackDao.deleteTracksWithoutReferences()
     }
 
     override suspend fun updateTrackFavoriteStatus(track: Track, isFavorite: Boolean) {
@@ -38,7 +49,8 @@ class TracksManagementRepositoryImpl(private val database: AppDatabase) : Tracks
     }
 
     override suspend fun deleteTracksByPlaylistId(playlistId: Long) {
-        // Можно реализовать позже
+        trackDao.deletePlaylistTracksByPlaylistId(playlistId)
+        trackDao.deleteTracksWithoutReferences()
     }
 
     override suspend fun getTrackById(trackId: Long): Track? {
