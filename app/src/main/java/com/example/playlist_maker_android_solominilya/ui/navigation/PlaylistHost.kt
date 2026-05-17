@@ -3,6 +3,7 @@ package com.example.playlist_maker_android_solominilya.ui.navigation
 import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -113,7 +114,10 @@ fun PlaylistHost(navController: NavHostController) {
             SettingsScreen(onBackClick = { navController.popBackStack() })
         }
         composable(Screen.FAVORITES.route) {
-            FavoritesScreen(onBackClick = { navController.popBackStack() })
+            FavoritesScreen(
+                onBackClick = { navController.popBackStack() },
+                onTrackClick = { trackId -> navController.navigate("track_details/$trackId") }
+            )
         }
         composable(Screen.PLAYLISTS.route) {
             val playlistsViewModel: PlaylistsViewModel = viewModel()
@@ -478,11 +482,14 @@ fun HistoryRequests(
 }
 
 @Composable
-fun TrackListItem(track: Track, onClick: () -> Unit) {
+fun TrackListItem(track: Track, onLongClick: (() -> Unit)? = null, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() }
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            )
             .padding(vertical = 12.dp, horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
