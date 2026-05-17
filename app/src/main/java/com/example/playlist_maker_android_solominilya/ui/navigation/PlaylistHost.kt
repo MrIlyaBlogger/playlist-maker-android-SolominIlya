@@ -484,6 +484,8 @@ fun HistoryRequests(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(max = 200.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(backgroundColor)
     ) {
         items(historyList) { word ->
             Row(
