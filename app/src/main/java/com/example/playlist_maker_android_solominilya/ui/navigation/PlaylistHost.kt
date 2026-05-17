@@ -417,7 +417,12 @@ fun SearchScreen(
                 )
 
                 if (isFocused && text.isEmpty() && historyList.isNotEmpty()) {
-                    HorizontalDivider(thickness = 0.5.dp, color = textColor.copy(alpha = 0.2f))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(0.5.dp)
+                            .background(textColor.copy(alpha = 0.2f))
+                    )
                     HistoryRequests(
                         historyList = historyList,
                         onClick = { word ->
