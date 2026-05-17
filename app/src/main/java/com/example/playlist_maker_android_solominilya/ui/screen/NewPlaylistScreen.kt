@@ -93,7 +93,7 @@ fun NewPlaylistScreen(
                 AsyncImage(
                     model = selectedCoverUri ?: R.drawable.ic_music,
                     contentDescription = "Обложка плейлиста",
-                    modifier = Modifier.matchParentSize(),
+                    modifier = Modifier.size(160.dp),
                     contentScale = ContentScale.Crop,
                     placeholder = painterResource(id = R.drawable.ic_music),
                     error = painterResource(id = R.drawable.ic_music)
