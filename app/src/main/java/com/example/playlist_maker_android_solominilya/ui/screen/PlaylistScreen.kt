@@ -77,12 +77,26 @@ fun PlaylistScreen(
                         .background(MaterialTheme.colorScheme.primaryContainer),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_music),
-                        contentDescription = null,
-                        modifier = Modifier.size(80.dp),
-                        tint = Color.White
-                    )
+                    if (currentPlaylist.coverImagePath != null) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(currentPlaylist.coverImagePath)
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = currentPlaylist.name,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                            placeholder = painterResource(id = R.drawable.ic_music),
+                            error = painterResource(id = R.drawable.ic_music)
+                        )
+                    } else {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_music),
+                            contentDescription = null,
+                            modifier = Modifier.size(80.dp),
+                            tint = Color.White
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))

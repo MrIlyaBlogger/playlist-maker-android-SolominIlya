@@ -13,11 +13,19 @@ import com.example.playlist_maker_android_solominilya.domain.api.SearchHistoryRe
 import com.example.playlist_maker_android_solominilya.domain.api.TracksManagementRepository
 import com.example.playlist_maker_android_solominilya.domain.api.TracksRepository
 import androidx.room.Room
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 
 object Creator {
+    private val migration1To2 = object : Migration(1, 2) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE playlists ADD COLUMN coverImagePath TEXT")
+        }
+    }
+
     private val database: AppDatabase by lazy {
         Room.databaseBuilder(App.instance, AppDatabase::class.java, "playlist_maker.db")
-            .fallbackToDestructiveMigration()   // <-- добавить
+            .addMigrations(migration1To2)
             .build()
     }
 

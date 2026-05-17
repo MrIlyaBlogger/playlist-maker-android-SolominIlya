@@ -34,6 +34,7 @@ fun PlaylistEntity.toDomainModel(tracks: List<Track> = emptyList()): Playlist {
         id = this.id,
         name = this.name,
         description = this.description,
+        coverImagePath = this.coverImagePath,
         tracks = tracks
     )
 }
@@ -42,6 +43,7 @@ fun Playlist.toEntity(): PlaylistEntity {
     return PlaylistEntity(
         id = this.id,
         name = this.name,
-        description = this.description
+        description = this.description,
+        coverImagePath = this.coverImagePath
     )
 }
