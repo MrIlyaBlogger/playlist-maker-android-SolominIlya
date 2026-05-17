@@ -36,7 +36,6 @@ import androidx.compose.material.icons.outlined.Headset
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -413,10 +412,15 @@ fun SearchScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
             if (isFocused && text.isEmpty() && historyList.isNotEmpty()) {
-                HistoryRequests(historyList = historyList, onClick = { word ->
-                    text = word
-                    viewModel.updateQuery(word)
-                })
+                HistoryRequests(
+                    historyList = historyList,
+                    onClick = { word ->
+                        text = word
+                        viewModel.updateQuery(word)
+                    },
+                    backgroundColor = searchFieldBackgroundColor,
+                    textColor = textColor
+                )
             }
 
             when (screenState) {
@@ -460,12 +464,16 @@ fun SearchScreen(
 @Composable
 fun HistoryRequests(
     historyList: List<Word>,
-    onClick: (String) -> Unit
+    onClick: (String) -> Unit,
+    backgroundColor: Color,
+    textColor: Color
 ) {
     LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(max = 200.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(backgroundColor)
     ) {
         items(historyList) { word ->
             Row(
@@ -475,11 +483,15 @@ fun HistoryRequests(
                     .padding(vertical = 12.dp, horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(imageVector = Icons.Filled.History, contentDescription = null, tint = Color.Gray)
+                Icon(imageVector = Icons.Filled.History, contentDescription = null, tint = textColor.copy(alpha = 0.6f))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = word.word, color = Color.Gray)
+                Text(
+                    text = word.word,
+                    color = textColor,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
             }
-            HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray)
         }
     }
 }
