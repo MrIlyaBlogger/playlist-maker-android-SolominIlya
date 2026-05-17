@@ -480,6 +480,9 @@ fun HistoryRequests(
     onClick: (String) -> Unit,
     textColor: Color
 ) {
+    val darkTheme = isSystemInDarkTheme()
+    val backgroundColor = if (darkTheme) Color(0xFF2C2C2E) else Color(0xFFEFEFF4)
+
     LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
