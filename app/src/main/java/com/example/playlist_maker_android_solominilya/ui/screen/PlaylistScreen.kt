@@ -19,7 +19,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -111,7 +110,6 @@ fun PlaylistScreen(
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
                     items(currentPlaylist.tracks) { track ->
                         TrackItemForPlaylist(track = track, onClick = { onTrackClick(track) })
-                        HorizontalDivider()
                     }
                 }
             }
@@ -145,8 +143,16 @@ fun TrackItemForPlaylist(track: Track, onClick: () -> Unit) {
         Spacer(modifier = Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(track.trackName, fontWeight = FontWeight.Medium)
-            Text(track.artistName, fontSize = 14.sp, color = Color.Gray)
+            Text(
+                text = "${track.artistName} · ${track.formattedTime}",
+                fontSize = 12.sp,
+                color = Color.Gray
+            )
         }
-        Text(track.formattedTime, fontSize = 14.sp, color = Color.Gray)
+        Text(
+            text = ">",
+            fontSize = 18.sp,
+            color = Color.Gray
+        )
     }
 }

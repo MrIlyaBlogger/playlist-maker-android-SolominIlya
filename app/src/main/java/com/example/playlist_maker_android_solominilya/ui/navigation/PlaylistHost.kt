@@ -440,7 +440,6 @@ fun SearchScreen(
                         LazyColumn(Modifier.fillMaxSize()) {
                             items(tracks) { track ->
                                 TrackListItem(track = track, onClick = { onTrackClick(track) })
-                                HorizontalDivider(thickness = 0.5.dp, color = if (darkTheme) Color.Gray else Color.LightGray)
                             }
                         }
                     }
@@ -513,9 +512,17 @@ fun TrackListItem(track: Track, onLongClick: (() -> Unit)? = null, onClick: () -
                 .padding(start = 16.dp)
         ) {
             Text(track.trackName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Text(track.artistName, fontSize = 14.sp, color = Color.Gray)
+            Text(
+                text = "${track.artistName} · ${track.formattedTime}",
+                fontSize = 12.sp,
+                color = Color.Gray
+            )
         }
-        Text(track.formattedTime, fontSize = 14.sp, color = Color.Gray)
+        Text(
+            text = ">",
+            fontSize = 18.sp,
+            color = Color.Gray
+        )
     }
 }
 
