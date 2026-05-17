@@ -84,6 +84,7 @@ fun NewPlaylistScreen(
         ) {
             Box(
                 modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
                     .size(160.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .clickable { coverPickerLauncher.launch("image/*") },
