@@ -232,7 +232,11 @@ fun MainMenuItem(
         Icon(imageVector = icon, contentDescription = text, tint = iconColor)
         Spacer(modifier = Modifier.width(8.dp))
         Text(text = text, color = textColor, fontSize = 16.sp, modifier = Modifier.weight(1f))
-        Icon(imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = arrowColor)
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            tint = arrowColor.copy(alpha = 0.45f)
+        )
     }
 }
 
@@ -518,10 +522,10 @@ fun TrackListItem(track: Track, onLongClick: (() -> Unit)? = null, onClick: () -
                 color = Color.Gray
             )
         }
-        Text(
-            text = ">",
-            fontSize = 18.sp,
-            color = Color.Gray
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            tint = Color.Gray.copy(alpha = 0.45f)
         )
     }
 }
