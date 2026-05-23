@@ -7,6 +7,7 @@ import com.example.playlist_maker_android_solominilya.creator.Creator
 import com.example.playlist_maker_android_solominilya.domain.api.PlaylistsRepository
 import com.example.playlist_maker_android_solominilya.domain.api.TracksManagementRepository
 import com.example.playlist_maker_android_solominilya.domain.models.Playlist
+import com.example.playlist_maker_android_solominilya.domain.models.Track
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,6 +26,12 @@ class PlaylistViewModel(
     fun updateCoverImage(coverImagePath: String?) {
         viewModelScope.launch {
             playlistsRepository.updatePlaylistCover(playlistId, coverImagePath)
+        }
+    }
+
+    fun deleteTrackFromPlaylist(track: Track) {
+        viewModelScope.launch {
+            tracksManagementRepo.deleteTrackFromPlaylist(track)
         }
     }
 
